@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Credit Card Benefits Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css?v=20260721-1"
+    onerror="this.onerror=null;this.href='styles.css?v=20260721-1'" />
+  <link rel="icon" href="/favicon.ico" />
+</head>
+
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Welcome to</p>
+        <h1 class="app-logo">CATCH</h1>
+        <p class="muted"><span class="highlight-letter">C</span>redit <span class="highlight-letter">A</span>lert <span
+            class="highlight-letter">T</span>racker for <span class="highlight-letter">C</span>ard <span
+            class="highlight-letter">H</span>olders</p>
+      </div>
+      <div class="hero-actions">
+        <button id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle dark/light mode"
+          style="min-inline-size: 2.5rem; padding-inline: 0.5rem; font-size: 1.2rem; background: var(--panel-bg); color: var(--text); border: 1px solid var(--line);">☀️</button>
+        <div class="as-of">As of <strong id="as-of">-</strong></div>
+        <button id="refresh" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <div id="notice" class="notice" hidden role="status"></div>
+    <div id="error" class="error" hidden role="alert"></div>
+
+    <nav class="tabs-panel" aria-label="Dashboard and credit card tabs">
+      <a id="dashboard-tab" class="tab-link is-active" href="#dashboard">Dashboard</a>
+      <div id="card-tabs" class="card-tabs" aria-label="Credit card tabs"></div>
+    </nav>
+
+    <div id="dashboard-view" class="view-section">
+      <section class="panel table-panel" aria-labelledby="due-title">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Deadline watch</p>
+            <h2 id="due-title">45-Day Due</h2>
+          </div>
+          <p id="due-count" class="muted">Loading...</p>
+        </div>
+        <div class="table-wrap">
+          <table class="benefit-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Card Name</th>
+                <th>Coupon/Benefit</th>
+                <th>Type</th>
+                <th class="numeric">Total</th>
+                <th class="numeric used-column">Used</th>
+                <th class="numeric">Remaining</th>
+                <th>Deadline</th>
+              </tr>
+            </thead>
+            <tbody id="due-body">
+              <tr>
+                <td colspan="8" class="empty-cell">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel table-panel" aria-labelledby="active-title">
+        <div class="panel-header">
+          <div>
+            <p class="eyebrow">Current coupons</p>
+            <h2 id="active-title">ACTIVE (Current)</h2>
+          </div>
+          <p id="active-count" class="muted">Loading...</p>
+        </div>
+        <div class="table-wrap">
+          <table class="benefit-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Card Name</th>
+                <th>Coupon/Benefit</th>
+                <th>Type</th>
+                <th class="numeric">Total</th>
+                <th class="numeric used-column">Used</th>
+                <th class="numeric">Remaining</th>
+                <th>Deadline</th>
+              </tr>
+            </thead>
+            <tbody id="active-body">
+              <tr>
+                <td colspan="8" class="empty-cell">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <section id="card-view" class="view-section" hidden aria-live="polite">
+      <div id="card-detail" class="panel card-detail-panel">
+        <p class="muted">Choose a card tab to view all benefit periods.</p>
+      </div>
+    </section>
+  </main>
+  <script src="/static/app.js?v=20260721-1" onerror="this.onerror=null;this.src='app.js?v=20260721-1'"></script>
+</body>
+
+</html>

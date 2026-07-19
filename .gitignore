@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+docker-compose.override.yaml
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+backups/
+*.sql
+!scripts/init_db.sql
+*.sql.gz
+.opencode
