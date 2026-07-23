@@ -673,6 +673,11 @@ input {
   min-inline-size: 13rem;
 }
 
+.deadline-col {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .card-name {
   min-inline-size: 16rem;
   font-weight: 700;

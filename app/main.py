@@ -1,6 +1,6 @@
 """
 FastAPI entry point.
-uvicorn app.main:app --reload --host 0.0.0.0 --port 9211
+DATABASE_HOST=127.0.0.1 uvicorn app.main:app --reload --host 0.0.0.0 --port 9211
 """
 
 from __future__ import annotations

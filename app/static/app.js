@@ -328,7 +328,7 @@ function benefitRow(row) {
       </form>
     </td>
     <td class="numeric remaining-cell" data-label="Remaining">${escapeHtml(formatAmount(row.amount_remaining, row.unit))} ${unit}</td>
-    <td data-label="Deadline"><strong>${escapeHtml(row.deadline)}</strong><span class="period-key">${escapeHtml(row.period_key)}</span></td>
+    <td data-label="Deadline" class="deadline-col"><strong>${escapeHtml(row.deadline)}</strong><span class="period-key">${escapeHtml(row.period_key)}</span></td>
   `;
   return tr;
 }
@@ -525,7 +525,7 @@ function cardPeriodRow(period, definition, cardId) {
       ${pendingDeadlineText}
     </td>
     <td data-label="Period"><strong>${escapeHtml(period.period_key)}</strong><span class="period-key">${escapeHtml(period.period_start)} to ${escapeHtml(period.period_end)}</span></td>
-    <td data-label="Deadline"><strong>${escapeHtml(period.deadline)}</strong></td>
+    <td data-label="Deadline" class="deadline-col"><strong>${escapeHtml(period.deadline)}</strong></td>
     <td class="numeric" data-label="Total">${escapeHtml(formatAmount(period.amount_total, definition.unit))} ${unit}</td>
     <td class="numeric used-column" data-label="Used">
       <form class="used-form" data-period-id="${escapeHtml(period.benefit_period_id)}" data-card-id="${escapeHtml(cardId)}" data-note="Updated from card tab Used column">
