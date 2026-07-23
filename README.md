@@ -2,6 +2,8 @@
 
 A self-hosted FastAPI + MariaDB application for tracking credit card benefits, usage, and rollovers.
 
+![Dashboard Screenshot](./screenshot.png)
+
 ## Features
 
 - SQLAlchemy models for the core runtime schema.
