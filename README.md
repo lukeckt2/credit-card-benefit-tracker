@@ -15,6 +15,64 @@ A self-hosted FastAPI + MariaDB application for tracking credit card benefits, u
 
 Database creation, user creation, and migration execution require explicit approval before touching MariaDB.
 
+## Database Schema
+
+```mermaid
+erDiagram
+    card_master {
+        int card_id PK
+        string slug UK
+        string display_name
+        string card_name
+        string issuer
+        decimal annual_fee
+        string status
+        date open_date
+        int open_month
+        int open_day
+        string source_url
+        string notes
+    }
+    benefit_definitions {
+        int benefit_definition_id PK
+        int card_id FK
+        string name
+        string normalized_name
+        string cycle_type
+        string unit
+        decimal default_amount_total
+        string default_deadline_rule
+        string default_period_rule
+        boolean active
+        string notes
+    }
+    benefit_periods {
+        int benefit_period_id PK
+        int benefit_definition_id FK
+        string period_key
+        date period_start
+        date period_end
+        date deadline
+        decimal amount_total
+        string status
+        datetime completed_at
+    }
+    usage_events {
+        int usage_event_id PK
+        int benefit_period_id FK
+        string event_type
+        decimal amount_delta
+        string note
+        datetime used_at
+        string source_key
+        datetime created_at
+    }
+    
+    card_master ||--o{ benefit_definitions : "has"
+    benefit_definitions ||--o{ benefit_periods : "has"
+    benefit_periods ||--o{ usage_events : "has"
+```
+
 ## Database Initialization
 
 This application requires an existing MariaDB server. Before starting the application, you must initialize the database and users. 
