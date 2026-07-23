@@ -75,14 +75,25 @@ erDiagram
     benefit_periods ||--o{ usage_events : "has"
 ```
 
-## Database Initialization
+## Database Setup & Initialization
 
-This application requires an existing MariaDB server. Before starting the application, you must initialize the database and users. 
-You can run the provided initialization script against your MariaDB instance:
+This application requires an existing MariaDB server. Before starting the application, you must initialize the database, users, and tables. 
 
-```bash
-mysql -h <your-database-host> -u root -p < scripts/init_db.sql
-```
+1. **Create the database and users** by running the provided SQL script against your MariaDB instance:
+   ```bash
+   mysql -h <your-database-host> -u root -p < scripts/init_db.sql
+   ```
+
+2. **Create the tables (Migrations)** using Alembic once your `.env` file is configured (see Local Setup):
+   ```bash
+   # If running locally:
+   alembic upgrade head
+
+   # Or if using Docker (after running docker-compose up -d):
+   docker-compose exec credit-card-benefits alembic upgrade head
+   ```
+
+Alembic uses `MIGRATION_DATABASE_*` variables when provided, otherwise it falls back to the runtime `DATABASE_*` variables. The initial migration creates the core app tables plus Alembic's `alembic_version` tracking table.
 
 ## Local Setup
 
@@ -103,11 +114,6 @@ To start the application using Docker Compose:
 docker-compose up -d
 ```
 
-Once the application is running, run the following command to create the database tables:
-
-```bash
-docker-compose exec credit-card-benefits alembic upgrade head
-```
 
 If you modify the source files (like HTML, CSS, or Python scripts), you must rebuild the image for changes to take effect:
 
@@ -194,20 +200,6 @@ python -m pytest
 ```
 
 Tests use an isolated SQLite database and do not connect to MariaDB.
-
-
-
-## Migrations
-
-After MariaDB database/user approval:
-
-```bash
-alembic upgrade head
-```
-
-Alembic uses `MIGRATION_DATABASE_*` variables when provided, otherwise it falls back to the runtime `DATABASE_*` variables.
-
-The initial migration creates the four core app tables plus Alembic's `alembic_version` tracking table. Rollover and appendix migration tables are intentionally not part of the initial core-only build.
 
 ## Backup
 
