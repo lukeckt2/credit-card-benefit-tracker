@@ -1,6 +1,11 @@
 """
 FastAPI entry point.
-DATABASE_HOST=127.0.0.1 uvicorn app.main:app --reload --host 0.0.0.0 --port 9211
+
+Local debugging (prod database):
+    DATABASE_HOST=127.0.0.1 uvicorn app.main:app --reload --host 127.0.0.1 --port 9211
+
+Local debugging (dev database — DEV_DATABASE_HOST resolved from .env):
+    APP_ENV=dev uvicorn app.main:app --reload --host 127.0.0.1 --port 9211
 """
 
 from __future__ import annotations
