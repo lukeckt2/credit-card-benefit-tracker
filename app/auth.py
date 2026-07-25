@@ -53,6 +53,7 @@ def get_current_user(
         user = User(username=username)
         session.add(user)
         session.flush()  # Assign user_id
+        session.commit() # Save to DB
         logger.info("Auto-provisioned new user: %s (user_id=%d)", username, user.user_id)
 
     return user
