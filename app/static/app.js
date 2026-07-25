@@ -12,6 +12,9 @@ const cardTabs = document.querySelector("#card-tabs");
 const dashboardView = document.querySelector("#dashboard-view");
 const cardView = document.querySelector("#card-view");
 const cardDetail = document.querySelector("#card-detail");
+const userInfo = document.querySelector("#user-info");
+const usernameSpan = document.querySelector("#username");
+const logoutLink = document.querySelector("#logout-link");
 
 const currencyFormatter = new Intl.NumberFormat(undefined, {
   style: "currency",
@@ -221,6 +224,10 @@ async function readErrorMessage(response) {
 
 async function fetchJson(url, options) {
   const response = await fetch(url, options || {});
+  if (response.status === 401) {
+    showError("Unauthorized or session expired. Please refresh the page.");
+    throw new Error("Unauthorized");
+  }
   if (!response.ok) throw new Error(await readErrorMessage(response));
   return response.json();
 }
@@ -743,7 +750,7 @@ async function saveUsedAmount(form) {
 
 async function refreshCurrentView() {
   const route = routeFromHash();
-  await Promise.all([loadCards(), loadDashboard()]);
+  await Promise.all([loadAuth(), loadCards(), loadDashboard()]);
   if (route.type === "card") {
     cardDetails.delete(route.cardId);
     await loadCardDetail(route.cardId, { force: true, highlightPeriodId: route.periodId });
@@ -800,8 +807,24 @@ themeToggleButton.addEventListener("click", () => {
   localStorage.setItem("theme", newTheme);
 });
 
+async function loadAuth() {
+  try {
+    const data = await fetchJson("/api/auth/me");
+    usernameSpan.textContent = data.username;
+    if (data.logout_url) {
+      logoutLink.href = data.logout_url;
+      logoutLink.hidden = false;
+    } else {
+      logoutLink.hidden = true;
+    }
+    userInfo.hidden = false;
+  } catch (error) {
+    console.error("Auth load failed:", error);
+  }
+}
+
 async function initialize() {
-  await Promise.all([loadDashboard(), loadCards()]);
+  await Promise.all([loadAuth(), loadDashboard(), loadCards()]);
   await handleRoute();
 }
 

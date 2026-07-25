@@ -249,6 +249,13 @@ input {
 
 .hero-actions {
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.hero-actions-row {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
@@ -872,4 +879,32 @@ input {
   .table-panel {
     padding: 1rem;
   }
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  padding-inline: 1rem;
+  padding-block: 0.5rem;
+  background: var(--dim-bg-03);
+}
+
+.username {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.logout-link {
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.logout-link:hover {
+  text-decoration: underline;
+  opacity: 0.8;
 }

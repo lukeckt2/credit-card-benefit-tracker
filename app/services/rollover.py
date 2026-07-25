@@ -183,8 +183,8 @@ def generate_candidate_periods(
     return []
 
 
-def _definition_rows(session: Session, request: RolloverRequest):
-    statement = select(BenefitDefinition, CardMaster).join(CardMaster)
+def _definition_rows(session: Session, request: RolloverRequest, *, user_id: int):
+    statement = select(BenefitDefinition, CardMaster).join(CardMaster).where(CardMaster.user_id == user_id)
     if request.definition_ids:
         statement = statement.where(
             BenefitDefinition.benefit_definition_id.in_(request.definition_ids)
@@ -199,14 +199,14 @@ def _definition_rows(session: Session, request: RolloverRequest):
 
 
 def build_rollover_response(
-    session: Session, request: RolloverRequest, *, dry_run: bool
+    session: Session, request: RolloverRequest, *, user_id: int, dry_run: bool
 ) -> RolloverResponse:
     periods: list[RolloverPeriod] = []
     warnings: list[RolloverWarning] = []
     skipped = 0
     not_due = 0
 
-    for definition, card in _definition_rows(session, request):
+    for definition, card in _definition_rows(session, request, user_id=user_id):
         if definition.default_period_rule or definition.default_deadline_rule:
             skipped += 1
             warnings.append(
@@ -320,12 +320,12 @@ def build_rollover_response(
     )
 
 
-def preview_rollover(session: Session, request: RolloverRequest) -> RolloverResponse:
-    return build_rollover_response(session, request, dry_run=True)
+def preview_rollover(session: Session, request: RolloverRequest, *, user_id: int) -> RolloverResponse:
+    return build_rollover_response(session, request, user_id=user_id, dry_run=True)
 
 
-def apply_rollover(session: Session, request: RolloverRequest) -> RolloverResponse:
-    response = build_rollover_response(session, request, dry_run=False)
+def apply_rollover(session: Session, request: RolloverRequest, *, user_id: int) -> RolloverResponse:
+    response = build_rollover_response(session, request, user_id=user_id, dry_run=False)
     created = 0
     for period in response.periods:
         if period.action != "create":

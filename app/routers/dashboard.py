@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from app.data_wrapper import dashboard as dashboard_wrapper
 from app.db import get_session
 from app.schemas import CycleType, DashboardResponse, PeriodStatus
-
+from app.auth import get_current_user
+from app.models import User
 
 router = APIRouter(tags=["dashboard"])
 
@@ -28,9 +29,11 @@ def dashboard(
     deadline_start: date | None = None,
     deadline_end: date | None = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> DashboardResponse:
     return dashboard_wrapper.build_dashboard(
         session,
+        user_id=current_user.user_id,
         as_of=as_of or date.today(),
         include_inactive_cards=include_inactive_cards,
         include_inactive_definitions=include_inactive_definitions,

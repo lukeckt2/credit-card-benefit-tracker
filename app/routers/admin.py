@@ -12,6 +12,8 @@ from app.db import get_session
 from app.routers._errors import commit_or_conflict
 from app.schemas import RolloverRequest, RolloverResponse
 from app.services import rollover as rollover_service
+from app.auth import get_current_user
+from app.models import User
 
 
 router = APIRouter(tags=["admin"])
@@ -31,8 +33,9 @@ def is_local_request(request: Request) -> bool:
 def rollover_preview(
     payload: RolloverRequest,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> RolloverResponse:
-    return rollover_service.preview_rollover(session, payload)
+    return rollover_service.preview_rollover(session, payload, user_id=current_user.user_id)
 
 
 @router.post("/admin/rollover/apply", response_model=RolloverResponse)
@@ -40,6 +43,7 @@ def rollover_apply(
     payload: RolloverRequest,
     request: Request,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> RolloverResponse:
     settings = get_settings()
     if settings.admin_local_only and not is_local_request(request):
@@ -48,6 +52,6 @@ def rollover_apply(
             detail="Rollover apply is restricted to local requests.",
         )
 
-    response = rollover_service.apply_rollover(session, payload)
+    response = rollover_service.apply_rollover(session, payload, user_id=current_user.user_id)
     commit_or_conflict(session)
     return response

@@ -8,6 +8,7 @@ Create Date: 2026-07-19
 from __future__ import annotations
 
 from typing import Sequence, Union
+import os
 
 from alembic import op
 import sqlalchemy as sa
@@ -22,9 +23,46 @@ TABLE_OPTIONS = {"mysql_charset": "utf8mb4", "mysql_collate": "utf8mb4_uca1400_a
 
 
 def upgrade() -> None:
+    # 1. Create users table
+    op.create_table(
+        "users",
+        sa.Column("user_id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("username", sa.String(length=128), nullable=False),
+        sa.Column("email", sa.String(length=255), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("CURRENT_TIMESTAMP"),
+        ),
+        sa.PrimaryKeyConstraint("user_id", name="pk_users"),
+        sa.UniqueConstraint("username", name="uq_users_username"),
+        sa.UniqueConstraint("email", name="uq_users_email"),
+        **TABLE_OPTIONS,
+    )
+
+    initial_username = os.getenv("MIGRATION_INITIAL_USER", "admin")
+    initial_email = os.getenv("MIGRATION_INITIAL_EMAIL", "")
+
+    # Insert a default user.
+    op.execute(
+        sa.text(
+            "INSERT INTO users (username, email) "
+            "VALUES (:username, :email)"
+        ).bindparams(username=initial_username, email=initial_email)
+    )
+
+    # 2. Create card_master table
     op.create_table(
         "card_master",
         sa.Column("card_id", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("slug", sa.String(length=128), nullable=False),
         sa.Column("display_name", sa.String(length=255), nullable=False),
         sa.Column("card_name", sa.String(length=255), nullable=False),
@@ -59,11 +97,19 @@ def upgrade() -> None:
             "open_day is null or open_day between 1 and 31",
             name=op.f("ck_card_master_open_day_range"),
         ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
+            ["users.user_id"],
+            name="fk_card_master_user_id_users",
+            ondelete="RESTRICT",
+        ),
         sa.PrimaryKeyConstraint("card_id", name="pk_card_master"),
         sa.UniqueConstraint("slug", name="uq_card_master_slug"),
         **TABLE_OPTIONS,
     )
-
+    op.create_index("ix_card_master_user_id", "card_master", ["user_id"])
+    
+    # 3. Create benefit_definitions table
     op.create_table(
         "benefit_definitions",
         sa.Column(
@@ -123,6 +169,7 @@ def upgrade() -> None:
         "ix_benefit_definitions_card_id", "benefit_definitions", ["card_id"]
     )
 
+    # 4. Create benefit_periods table
     op.create_table(
         "benefit_periods",
         sa.Column("benefit_period_id", sa.Integer(), autoincrement=True, nullable=False),
@@ -178,6 +225,7 @@ def upgrade() -> None:
     op.create_index("ix_benefit_periods_deadline", "benefit_periods", ["deadline"])
     op.create_index("ix_benefit_periods_status", "benefit_periods", ["status"])
 
+    # 5. Create usage_events table
     op.create_table(
         "usage_events",
         sa.Column("usage_event_id", sa.Integer(), autoincrement=True, nullable=False),
@@ -225,12 +273,18 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index("ix_usage_events_benefit_period_id", table_name="usage_events")
     op.drop_table("usage_events")
+    
     op.drop_index("ix_benefit_periods_status", table_name="benefit_periods")
     op.drop_index("ix_benefit_periods_deadline", table_name="benefit_periods")
     op.drop_index(
         "ix_benefit_periods_benefit_definition_id", table_name="benefit_periods"
     )
     op.drop_table("benefit_periods")
+    
     op.drop_index("ix_benefit_definitions_card_id", table_name="benefit_definitions")
     op.drop_table("benefit_definitions")
+    
+    op.drop_index("ix_card_master_user_id", table_name="card_master")
     op.drop_table("card_master")
+    
+    op.drop_table("users")

@@ -702,20 +702,28 @@ def parse_definition(
     )
 
 
-def db_counts(session: Session) -> dict[str, int]:
+def db_counts(session: Session, *, user_id: int) -> dict[str, int]:
     return {
-        "card_master": session.scalar(select(func.count()).select_from(CardMaster)) or 0,
-        "benefit_definitions": session.scalar(select(func.count()).select_from(BenefitDefinition)) or 0,
-        "benefit_periods": session.scalar(select(func.count()).select_from(BenefitPeriod)) or 0,
-        "usage_events": session.scalar(select(func.count()).select_from(UsageEvent)) or 0,
+        "card_master": session.scalar(select(func.count()).select_from(CardMaster).where(CardMaster.user_id == user_id)) or 0,
+        "benefit_definitions": session.scalar(
+            select(func.count()).select_from(BenefitDefinition).join(CardMaster).where(CardMaster.user_id == user_id)
+        ) or 0,
+        "benefit_periods": session.scalar(
+            select(func.count()).select_from(BenefitPeriod).join(BenefitDefinition).join(CardMaster).where(CardMaster.user_id == user_id)
+        ) or 0,
+        "usage_events": session.scalar(
+            select(func.count()).select_from(UsageEvent).join(BenefitPeriod).join(BenefitDefinition).join(CardMaster).where(CardMaster.user_id == user_id)
+        ) or 0,
     }
 
 
-def annotate_actions(plan: CardCsvPlan, session: Session) -> None:
+def annotate_actions(plan: CardCsvPlan, session: Session, *, user_id: int) -> None:
     if plan.card is None:
         return
 
-    existing_card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug))
+    existing_card = session.scalar(
+        select(CardMaster).where(CardMaster.slug == plan.card.slug, CardMaster.user_id == user_id)
+    )
     if existing_card is None:
         plan.card.action = "create"
         for definition in plan.definitions:
@@ -782,11 +790,11 @@ def decimal_equal(left: Decimal | int | float | str | None, right: Decimal | Non
     return Decimal(str(left)) == right
 
 
-def current_period_plans(plan: CardCsvPlan, session: Session) -> list[CurrentPeriodPlan]:
+def current_period_plans(plan: CardCsvPlan, session: Session, *, user_id: int) -> list[CurrentPeriodPlan]:
     if plan.card is None:
         return []
 
-    existing_period_keys = existing_period_keys_by_definition(plan, session)
+    existing_period_keys = existing_period_keys_by_definition(plan, session, user_id=user_id)
     periods: list[CurrentPeriodPlan] = []
     for definition in plan.definitions:
         if definition.cycle_type not in SUPPORTED_ROLLOVER_CYCLE_TYPES:
@@ -823,11 +831,11 @@ def current_period_plans(plan: CardCsvPlan, session: Session) -> list[CurrentPer
 
 
 def existing_period_keys_by_definition(
-    plan: CardCsvPlan, session: Session
+    plan: CardCsvPlan, session: Session, *, user_id: int
 ) -> dict[str, set[str]]:
     if plan.card is None:
         return {}
-    card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug))
+    card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug, CardMaster.user_id == user_id))
     if card is None:
         return {}
     definitions = list(
@@ -908,10 +916,10 @@ def has_blocking_issues(plan: CardCsvPlan) -> bool:
 
 
 def plan_output(
-    plan: CardCsvPlan, session: Session, *, include_details: bool
+    plan: CardCsvPlan, session: Session, *, user_id: int, include_details: bool
 ) -> dict[str, Any]:
-    annotate_actions(plan, session)
-    current_periods = current_period_plans(plan, session)
+    annotate_actions(plan, session, user_id=user_id)
+    current_periods = current_period_plans(plan, session, user_id=user_id)
     warnings = output_warnings(plan)
     output: dict[str, Any] = {
         "csv_path": str(plan.csv_path),
@@ -929,7 +937,7 @@ def plan_output(
             "benefit_definitions": summarize_actions(plan.definitions),
             "current_periods": summarize_actions(current_periods),
         },
-        "database_counts": db_counts(session),
+        "database_counts": db_counts(session, user_id=user_id),
         "warning_types": warning_types(warnings),
         "warnings": [warning.as_dict() for warning in warnings],
         "skipped_rows": [row.as_dict() for row in plan.skipped_rows],
@@ -943,16 +951,16 @@ def plan_output(
     return output
 
 
-def apply_plan(plan: CardCsvPlan, session: Session) -> dict[str, Any]:
-    before_counts = db_counts(session)
-    annotate_actions(plan, session)
+def apply_plan(plan: CardCsvPlan, session: Session, *, user_id: int) -> dict[str, Any]:
+    before_counts = db_counts(session, user_id=user_id)
+    annotate_actions(plan, session, user_id=user_id)
     warnings = output_warnings(plan)
     if has_blocking_issues(plan):
         return {
             "applied": False,
             "blocked": True,
             "before_counts": before_counts,
-            "after_counts": db_counts(session),
+            "after_counts": db_counts(session, user_id=user_id),
             "actions": {
                 "cards": summarize_actions([plan.card] if plan.card else []),
                 "benefit_definitions": summarize_actions(plan.definitions),
@@ -967,9 +975,9 @@ def apply_plan(plan: CardCsvPlan, session: Session) -> dict[str, Any]:
     created_definitions = 0
     with session.begin():
         assert plan.card is not None
-        card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug))
+        card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug, CardMaster.user_id == user_id))
         if card is None:
-            card = CardMaster(slug=plan.card.slug)
+            card = CardMaster(slug=plan.card.slug, user_id=user_id)
             session.add(card)
             created_cards = 1
         set_card_fields(card, plan.card)
@@ -1003,13 +1011,14 @@ def apply_plan(plan: CardCsvPlan, session: Session) -> dict[str, Any]:
                     window_end=plan.as_of,
                     definition_ids=definition_ids,
                 ),
+                user_id=user_id,
             )
 
     return {
         "applied": True,
         "blocked": False,
         "before_counts": before_counts,
-        "after_counts": db_counts(session),
+        "after_counts": db_counts(session, user_id=user_id),
         "created_cards": created_cards,
         "created_benefit_definitions": created_definitions,
         "rollover": rollover_response.model_dump(mode="json") if rollover_response else None,
@@ -1042,14 +1051,14 @@ def set_definition_fields(definition: BenefitDefinition, plan: DefinitionPlan) -
     definition.notes = plan.notes
 
 
-def reconcile_plan(plan: CardCsvPlan, session: Session) -> dict[str, Any]:
-    annotate_actions(plan, session)
+def reconcile_plan(plan: CardCsvPlan, session: Session, *, user_id: int) -> dict[str, Any]:
+    annotate_actions(plan, session, user_id=user_id)
     warnings = output_warnings(plan)
     issues: list[dict[str, Any]] = []
     if plan.card is None:
         issues.append({"type": "missing_planned_card"})
     else:
-        card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug))
+        card = session.scalar(select(CardMaster).where(CardMaster.slug == plan.card.slug, CardMaster.user_id == user_id))
         if card is None:
             issues.append({"type": "missing_card", "slug": plan.card.slug})
         elif not card_matches(card, plan.card):
@@ -1081,7 +1090,7 @@ def reconcile_plan(plan: CardCsvPlan, session: Session) -> dict[str, Any]:
                         }
                     )
 
-    for period_plan in current_period_plans(plan, session):
+    for period_plan in current_period_plans(plan, session, user_id=user_id):
         if period_plan.action != "exists":
             issues.append(
                 {
@@ -1102,7 +1111,7 @@ def reconcile_plan(plan: CardCsvPlan, session: Session) -> dict[str, Any]:
             "skipped_rows": len(plan.skipped_rows),
             "issues": len(issues),
         },
-        "database_counts": db_counts(session),
+        "database_counts": db_counts(session, user_id=user_id),
         "warning_types": warning_types(warnings),
         "issues": issues,
         "warnings": [warning.as_dict() for warning in warnings],

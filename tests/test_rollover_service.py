@@ -47,8 +47,10 @@ def add_definition(
     cycle_type: str,
     open_month: int = 5,
     open_day: int = 10,
+    user_id: int = 1,
 ) -> BenefitDefinition:
     card = CardMaster(
+        user_id=user_id,
         slug=slug,
         display_name=name,
         card_name=name,
@@ -149,7 +151,7 @@ def test_start_date_filter_creates_due_cycles_and_tracks_not_due(db_session):
         only_periods_starting_in_window=True,
     )
 
-    preview = preview_rollover(db_session, request)
+    preview = preview_rollover(db_session, request, user_id=1)
 
     assert {period.period_key for period in preview.periods} == {
         "2026-07",
@@ -161,11 +163,11 @@ def test_start_date_filter_creates_due_cycles_and_tracks_not_due(db_session):
     assert preview.skipped == 0
     assert preview.warnings == []
 
-    applied = apply_rollover(db_session, request)
+    applied = apply_rollover(db_session, request, user_id=1)
     db_session.commit()
     assert applied.created == 3
 
-    repeated = apply_rollover(db_session, request)
+    repeated = apply_rollover(db_session, request, user_id=1)
     assert repeated.created == 0
     assert repeated.existing == 3
     assert repeated.not_due == 2
@@ -194,6 +196,7 @@ def test_start_date_filter_respects_cycle_start_months(
             window_end=window_end,
             only_periods_starting_in_window=True,
         ),
+        user_id=1,
     )
 
     assert {period.period_key for period in response.periods} == expected_keys

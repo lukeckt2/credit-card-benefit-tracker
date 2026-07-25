@@ -114,7 +114,7 @@ def test_preview_plans_definitions_and_current_periods(tmp_path, db_session):
     )
 
     plan = build_plan(csv_path, as_of=date(2026, 7, 20))
-    output = plan_output(plan, db_session, include_details=True)
+    output = plan_output(plan, db_session, user_id=1, include_details=True)
 
     assert output["summary"]["blocking_issues"] is False
     assert output["summary"]["planned_cards"] == 1
@@ -158,7 +158,7 @@ def test_apply_creates_card_definitions_and_current_periods_idempotently(
         ],
     )
 
-    first = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session)
+    first = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session, user_id=1)
 
     assert first["applied"] is True
     assert first["created_cards"] == 1
@@ -169,7 +169,7 @@ def test_apply_creates_card_definitions_and_current_periods_idempotently(
     assert count_rows(db_session, BenefitPeriod) == 3
     assert count_rows(db_session, UsageEvent) == 0
 
-    second = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session)
+    second = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session, user_id=1)
 
     assert second["applied"] is True
     assert second["created_cards"] == 0
@@ -180,13 +180,14 @@ def test_apply_creates_card_definitions_and_current_periods_idempotently(
     assert count_rows(db_session, BenefitDefinition) == 3
     assert count_rows(db_session, BenefitPeriod) == 3
 
-    reconciled = reconcile_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session)
+    reconciled = reconcile_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session, user_id=1)
     assert reconciled["summary"]["issues"] == 0
 
 
 def test_apply_blocks_existing_card_conflict(tmp_path, db_session):
     db_session.add(
         CardMaster(
+            user_id=1,
             slug="test-card",
             display_name="Different Card",
             card_name="Different Card",
@@ -208,7 +209,7 @@ def test_apply_blocks_existing_card_conflict(tmp_path, db_session):
         ],
     )
 
-    result = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session)
+    result = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session, user_id=1)
 
     assert result["applied"] is False
     assert result["blocked"] is True
@@ -235,7 +236,7 @@ def test_parser_rejects_period_and_usage_columns(tmp_path, db_session):
     )
 
     plan = build_plan(csv_path, as_of=date(2026, 7, 20))
-    output = plan_output(plan, db_session, include_details=False)
+    output = plan_output(plan, db_session, user_id=1, include_details=False)
 
     assert output["summary"]["blocking_issues"] is True
     assert output["summary"]["planned_cards"] == 0
@@ -261,7 +262,7 @@ def test_missing_open_month_day_warns_but_imports_definition(tmp_path, db_sessio
         ],
     )
 
-    result = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session)
+    result = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session, user_id=1)
 
     assert result["applied"] is True
     assert {warning["type"] for warning in result["warnings"]} == {"missing_open_month_day"}

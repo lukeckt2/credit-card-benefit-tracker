@@ -40,6 +40,7 @@ SECTION_DEFINITIONS: tuple[tuple[str, str, SectionPredicate, SectionSortKey], ..
 def build_dashboard(
     session: Session,
     *,
+    user_id: int,
     as_of: date,
     include_inactive_cards: bool,
     include_inactive_definitions: bool,
@@ -52,6 +53,7 @@ def build_dashboard(
 ) -> DashboardResponse:
     rows = read_service.list_dashboard_rows(
         session,
+        user_id=user_id,
         as_of=as_of,
         include_inactive_cards=include_inactive_cards,
         include_inactive_definitions=include_inactive_definitions,

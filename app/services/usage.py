@@ -13,15 +13,19 @@ from app.services.errors import NotFoundError, ServiceValidationError
 from app.services.read import usage_total_for_period
 
 
+from app.services.read import _period_join_statement, usage_total_for_period
+
+
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def get_period_for_update(session: Session, period_id: int) -> BenefitPeriod:
-    period = session.get(BenefitPeriod, period_id)
-    if period is None:
+def get_period_for_update(session: Session, period_id: int, *, user_id: int) -> BenefitPeriod:
+    statement = _period_join_statement(user_id=user_id).where(BenefitPeriod.benefit_period_id == period_id)
+    row = session.execute(statement).first()
+    if row is None:
         raise NotFoundError(f"Benefit period {period_id} was not found.")
-    return period
+    return row[0]
 
 
 def remaining_amount_for_period(session: Session, period: BenefitPeriod) -> Decimal:
@@ -49,8 +53,8 @@ def sync_completion_from_usage_total(session: Session, period: BenefitPeriod) ->
         period.completed_at = None
 
 
-def patch_period(session: Session, period_id: int, payload: PeriodUpdate) -> BenefitPeriod:
-    period = get_period_for_update(session, period_id)
+def patch_period(session: Session, period_id: int, payload: PeriodUpdate, *, user_id: int) -> BenefitPeriod:
+    period = get_period_for_update(session, period_id, user_id=user_id)
     period_start = payload.period_start or period.period_start
     period_end = payload.period_end or period.period_end
     if period_start > period_end:
@@ -74,8 +78,8 @@ def patch_period(session: Session, period_id: int, payload: PeriodUpdate) -> Ben
     return period
 
 
-def complete_period(session: Session, period_id: int) -> BenefitPeriod:
-    period = get_period_for_update(session, period_id)
+def complete_period(session: Session, period_id: int, *, user_id: int) -> BenefitPeriod:
+    period = get_period_for_update(session, period_id, user_id=user_id)
     require_no_remaining_amount(session, period)
     period.status = "completed"
     if period.completed_at is None:
@@ -84,8 +88,8 @@ def complete_period(session: Session, period_id: int) -> BenefitPeriod:
     return period
 
 
-def reopen_period(session: Session, period_id: int) -> BenefitPeriod:
-    period = get_period_for_update(session, period_id)
+def reopen_period(session: Session, period_id: int, *, user_id: int) -> BenefitPeriod:
+    period = get_period_for_update(session, period_id, user_id=user_id)
     period.status = "pending"
     period.completed_at = None
     session.flush()
@@ -93,9 +97,9 @@ def reopen_period(session: Session, period_id: int) -> BenefitPeriod:
 
 
 def create_usage_event(
-    session: Session, period_id: int, payload: UsageEventCreate
+    session: Session, period_id: int, payload: UsageEventCreate, *, user_id: int
 ) -> UsageEvent:
-    period = get_period_for_update(session, period_id)
+    period = get_period_for_update(session, period_id, user_id=user_id)
     event = UsageEvent(
         benefit_period_id=period_id,
         event_type="usage",
@@ -112,9 +116,9 @@ def create_usage_event(
 
 
 def create_usage_adjustment(
-    session: Session, period_id: int, payload: UsageAdjustmentCreate
+    session: Session, period_id: int, payload: UsageAdjustmentCreate, *, user_id: int
 ) -> UsageEvent:
-    period = get_period_for_update(session, period_id)
+    period = get_period_for_update(session, period_id, user_id=user_id)
     current_used = usage_total_for_period(session, period_id)
     target_used = Decimal(payload.current_used_amount)
     delta = target_used - current_used

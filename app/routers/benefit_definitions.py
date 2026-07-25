@@ -10,6 +10,8 @@ from app.routers._errors import commit_or_conflict, http_not_found
 from app.schemas import BenefitDefinitionListResponse, BenefitDefinitionRead
 from app.services import deletion as deletion_service
 from app.services import read as read_service
+from app.auth import get_current_user
+from app.models import User
 from app.services.errors import NotFoundError
 
 
@@ -22,10 +24,12 @@ def benefit_definitions(
     include_inactive_definitions: bool = False,
     card_id: int | None = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitDefinitionListResponse:
     return BenefitDefinitionListResponse(
         benefit_definitions=read_service.list_benefit_definitions(
             session,
+            user_id=current_user.user_id,
             include_inactive_cards=include_inactive_cards,
             include_inactive_definitions=include_inactive_definitions,
             card_id=card_id,
@@ -37,9 +41,10 @@ def benefit_definitions(
 def benefit_definition(
     definition_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitDefinitionRead:
     try:
-        return read_service.get_benefit_definition(session, definition_id)
+        return read_service.get_benefit_definition(session, definition_id, user_id=current_user.user_id)
     except NotFoundError as error:
         raise http_not_found(error) from error
 
@@ -48,9 +53,10 @@ def benefit_definition(
 def remove_benefit_definition(
     benefit_definition_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> Response:
     try:
-        deletion_service.delete_benefit_definition(session, benefit_definition_id)
+        deletion_service.delete_benefit_definition(session, benefit_definition_id, user_id=current_user.user_id)
         commit_or_conflict(session)
         return Response(status_code=204)
     except NotFoundError as error:

@@ -82,6 +82,21 @@ class TimestampMixin:
     )
 
 
+class User(TimestampMixin, Base):
+    __tablename__ = "users"
+    __table_args__ = (
+        UniqueConstraint("username", name="uq_users_username"),
+        UniqueConstraint("email", name="uq_users_email"),
+        MYSQL_TABLE_OPTIONS,
+    )
+
+    user_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(128), nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    cards: Mapped[List["CardMaster"]] = relationship(back_populates="user")
+
+
 class CardMaster(TimestampMixin, Base):
     __tablename__ = "card_master"
     __table_args__ = (
@@ -98,10 +113,14 @@ class CardMaster(TimestampMixin, Base):
             "open_day is null or open_day between 1 and 31",
             name="open_day_range",
         ),
+        Index("ix_card_master_user_id", "user_id"),
         MYSQL_TABLE_OPTIONS,
     )
 
     card_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.user_id", ondelete="RESTRICT"), nullable=False
+    )
     slug: Mapped[str] = mapped_column(String(128), nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     card_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -116,6 +135,7 @@ class CardMaster(TimestampMixin, Base):
     source_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    user: Mapped["User"] = relationship(back_populates="cards")
     benefit_definitions: Mapped[List["BenefitDefinition"]] = relationship(
         back_populates="card"
     )

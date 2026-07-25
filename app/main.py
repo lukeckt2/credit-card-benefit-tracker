@@ -5,7 +5,10 @@ Local debugging (prod database):
     DATABASE_HOST=127.0.0.1 uvicorn app.main:app --reload --host 127.0.0.1 --port 9211
 
 Local debugging (dev database — DEV_DATABASE_HOST resolved from .env):
-    APP_ENV=dev uvicorn app.main:app --reload --host 127.0.0.1 --port 9211
+    DEV_DEFAULT_USER=admin APP_ENV=dev uvicorn app.main:app --reload --host 127.0.0.1 --port 9211
+
+Authentication Testing:
+    - By default, requests without proxy headers in dev mode will fallback to the user specified in  in .env.
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import admin, benefit_definitions, benefit_periods, cards, dashboard
+from app.routers import admin, auth, benefit_definitions, benefit_periods, cards, dashboard
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -40,6 +43,7 @@ def favicon() -> FileResponse:
     return FileResponse(STATIC_DIR / "favicon.ico")
 
 
+app.include_router(auth.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(cards.router, prefix="/api")
 app.include_router(benefit_definitions.router, prefix="/api")

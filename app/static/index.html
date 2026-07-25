@@ -10,8 +10,8 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700;900&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="/static/styles.css?v=20260721-1"
-    onerror="this.onerror=null;this.href='styles.css?v=20260721-1'" />
+  <link rel="stylesheet" href="/static/styles.css?v=20260725-2"
+    onerror="this.onerror=null;this.href='styles.css?v=20260725-2'" />
   <link rel="icon" href="/favicon.ico" />
 </head>
 
@@ -26,10 +26,18 @@
             class="highlight-letter">H</span>olders</p>
       </div>
       <div class="hero-actions">
-        <button id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle dark/light mode"
-          style="min-inline-size: 2.5rem; padding-inline: 0.5rem; font-size: 1.2rem; background: var(--panel-bg); color: var(--text); border: 1px solid var(--line);">☀️</button>
-        <div class="as-of">As of <strong id="as-of">-</strong></div>
-        <button id="refresh" type="button">Refresh</button>
+        <div class="hero-actions-row">
+          <button id="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle dark/light mode"
+            style="min-inline-size: 2.5rem; padding-inline: 0.5rem; font-size: 1.2rem; background: var(--panel-bg); color: var(--text); border: 1px solid var(--line);">☀️</button>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+        <div class="hero-actions-row">
+          <div class="as-of">As of <strong id="as-of">-</strong></div>
+          <div id="user-info" class="user-info" hidden>
+            <span id="username" class="username"></span>
+            <a id="logout-link" href="#" class="logout-link muted">Logout</a>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -111,7 +119,7 @@
       </div>
     </section>
   </main>
-  <script src="/static/app.js?v=20260721-1" onerror="this.onerror=null;this.src='app.js?v=20260721-1'"></script>
+  <script src="/static/app.js?v=20260725-1" onerror="this.onerror=null;this.src='app.js?v=20260725-1'"></script>
 </body>
 
 </html>

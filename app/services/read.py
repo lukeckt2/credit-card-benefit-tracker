@@ -166,7 +166,7 @@ def _usage_totals_subquery():
     )
 
 
-def _period_join_statement():
+def _period_join_statement(*, user_id: int):
     usage_totals = _usage_totals_subquery()
     return (
         select(BenefitPeriod, BenefitDefinition, CardMaster, usage_totals.c.amount_used)
@@ -176,6 +176,7 @@ def _period_join_statement():
             == BenefitDefinition.benefit_definition_id,
         )
         .join(CardMaster, BenefitDefinition.card_id == CardMaster.card_id)
+        .where(CardMaster.user_id == user_id)
         .outerjoin(
             usage_totals,
             usage_totals.c.benefit_period_id == BenefitPeriod.benefit_period_id,
@@ -243,6 +244,7 @@ def priority_for_period(period: BenefitPeriod, as_of: date) -> str:
 def list_dashboard_rows(
     session: Session,
     *,
+    user_id: int,
     as_of: date,
     include_inactive_cards: bool,
     include_inactive_definitions: bool,
@@ -255,7 +257,7 @@ def list_dashboard_rows(
     current_only: bool = False,
 ) -> list[DashboardRow]:
     statement = _apply_common_period_filters(
-        _period_join_statement(),
+        _period_join_statement(user_id=user_id),
         include_inactive_cards=include_inactive_cards,
         include_inactive_definitions=include_inactive_definitions,
         statuses=statuses,
@@ -300,8 +302,8 @@ def list_dashboard_rows(
     return rows
 
 
-def list_cards(session: Session, *, include_inactive: bool) -> list[CardRead]:
-    statement = select(CardMaster).order_by(CardMaster.display_name)
+def list_cards(session: Session, *, user_id: int, include_inactive: bool) -> list[CardRead]:
+    statement = select(CardMaster).where(CardMaster.user_id == user_id).order_by(CardMaster.display_name)
     if not include_inactive:
         statement = statement.where(CardMaster.status == "active")
     return [card_to_read(card) for card in session.scalars(statement)]
@@ -311,9 +313,14 @@ def get_card_detail(
     session: Session,
     card_id: int,
     *,
+    user_id: int,
     include_inactive_definitions: bool,
 ) -> CardDetail:
-    card = session.get(CardMaster, card_id)
+    card = session.execute(
+        select(CardMaster)
+        .where(CardMaster.card_id == card_id)
+        .where(CardMaster.user_id == user_id)
+    ).scalar_one_or_none()
     if card is None:
         raise NotFoundError(f"Card {card_id} was not found.")
 
@@ -363,11 +370,12 @@ def get_card_detail(
 def list_benefit_definitions(
     session: Session,
     *,
+    user_id: int,
     include_inactive_cards: bool,
     include_inactive_definitions: bool,
     card_id: int | None,
 ) -> list[BenefitDefinitionRead]:
-    statement = select(BenefitDefinition, CardMaster).join(CardMaster)
+    statement = select(BenefitDefinition, CardMaster).join(CardMaster).where(CardMaster.user_id == user_id)
     if not include_inactive_cards:
         statement = statement.where(CardMaster.status == "active")
     if not include_inactive_definitions:
@@ -382,12 +390,13 @@ def list_benefit_definitions(
 
 
 def get_benefit_definition(
-    session: Session, definition_id: int
+    session: Session, definition_id: int, *, user_id: int
 ) -> BenefitDefinitionRead:
     row = session.execute(
         select(BenefitDefinition, CardMaster)
         .join(CardMaster)
         .where(BenefitDefinition.benefit_definition_id == definition_id)
+        .where(CardMaster.user_id == user_id)
     ).one_or_none()
     if row is None:
         raise NotFoundError(f"Benefit definition {definition_id} was not found.")
@@ -398,6 +407,7 @@ def get_benefit_definition(
 def list_benefit_periods(
     session: Session,
     *,
+    user_id: int,
     include_inactive_cards: bool,
     include_inactive_definitions: bool,
     statuses: list[str] | None,
@@ -407,7 +417,7 @@ def list_benefit_periods(
     deadline_end: date | None,
 ) -> list[BenefitPeriodRead]:
     statement = _apply_common_period_filters(
-        _period_join_statement(),
+        _period_join_statement(user_id=user_id),
         include_inactive_cards=include_inactive_cards,
         include_inactive_definitions=include_inactive_definitions,
         statuses=statuses,
@@ -423,8 +433,8 @@ def list_benefit_periods(
     ]
 
 
-def get_benefit_period(session: Session, period_id: int) -> BenefitPeriodRead:
-    statement = _period_join_statement().where(
+def get_benefit_period(session: Session, period_id: int, *, user_id: int) -> BenefitPeriodRead:
+    statement = _period_join_statement(user_id=user_id).where(
         BenefitPeriod.benefit_period_id == period_id
     )
     row = session.execute(statement).one_or_none()
@@ -434,9 +444,9 @@ def get_benefit_period(session: Session, period_id: int) -> BenefitPeriodRead:
     return period_to_read(period, to_decimal(amount_used), definition, card)
 
 
-def list_usage_events(session: Session, period_id: int) -> list[UsageEventRead]:
-    if session.get(BenefitPeriod, period_id) is None:
-        raise NotFoundError(f"Benefit period {period_id} was not found.")
+def list_usage_events(session: Session, period_id: int, *, user_id: int) -> list[UsageEventRead]:
+    # verify ownership by attempting to fetch the period
+    get_benefit_period(session, period_id, user_id=user_id)
     events = session.scalars(
         select(UsageEvent)
         .where(UsageEvent.benefit_period_id == period_id)

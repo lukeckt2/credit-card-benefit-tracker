@@ -11,7 +11,8 @@ from sqlalchemy.pool import StaticPool
 
 from app.db import get_session
 from app.main import app
-from app.models import Base, BenefitDefinition, BenefitPeriod, CardMaster, UsageEvent
+from app.models import Base, BenefitDefinition, BenefitPeriod, CardMaster, UsageEvent, User
+from app.auth import get_current_user
 
 
 @pytest.fixture()
@@ -32,7 +33,12 @@ def client():
     Base.metadata.create_all(engine)
 
     with TestingSessionLocal() as session:
+        user = User(user_id=1, username="test_user", email="test@example.com")
+        session.add(user)
+        session.flush()
+
         card = CardMaster(
+            user_id=1,
             slug="test-card",
             display_name="Test Card",
             card_name="Test Card Preferred",
@@ -77,7 +83,11 @@ def client():
         with TestingSessionLocal() as session:
             yield session
 
+    def override_get_current_user():
+        return User(user_id=1, username="test_user", email="test@example.com")
+
     app.dependency_overrides[get_session] = override_session
+    app.dependency_overrides[get_current_user] = override_get_current_user
     with TestClient(app) as test_client:
         yield test_client, ids, TestingSessionLocal
     app.dependency_overrides.clear()
@@ -108,7 +118,7 @@ def test_dashboard_derives_usage_totals(client):
 
     frontend = test_client.get("/")
     assert frontend.status_code == 200
-    assert "Benefit Dashboard" in frontend.text
+    assert "Credit Card Benefits Tracker" in frontend.text
 
     response = test_client.get("/api/dashboard", params={"as_of": "2026-07-19"})
 
@@ -456,6 +466,7 @@ def test_delete_card_removes_definitions_periods_and_usage(client):
 
     with SessionLocal() as session:
         other_card = CardMaster(
+            user_id=1,
             slug="other-card",
             display_name="Other Card",
             card_name="Other Card Preferred",

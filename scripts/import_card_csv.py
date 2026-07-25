@@ -4,11 +4,14 @@
 Use cases:
 
 - Preview a draft CSV without writing:
-  `.venv/bin/python scripts/import_card_csv.py preview --csv "new_card/Chase UA Business.csv" --pretty --details`
+  `.venv/bin/python scripts/import_card_csv.py preview --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty --details`
+
 - Apply after reviewing preview output:
-  `.venv/bin/python scripts/import_card_csv.py apply --csv "new_card/Chase UA Business.csv" --yes --pretty`
+  `.venv/bin/python scripts/import_card_csv.py apply --csv "new_card/Chase UA Business.csv" --user-id 1 --yes --pretty`
+
 - Reconcile database state after apply:
-  `.venv/bin/python scripts/import_card_csv.py reconcile --csv "new_card/Chase UA Business.csv" --pretty`
+  `.venv/bin/python scripts/import_card_csv.py reconcile --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty`
+
 - Generate current periods for a specific date:
   add `--as-of YYYY-MM-DD` to preview/apply/reconcile.
 
@@ -88,6 +91,9 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Required for apply mode after preview review and explicit approval.",
     )
+    parser.add_argument(
+        "--user-id", required=True, type=int, help="ID of the user to import the card for."
+    )
     return parser.parse_args()
 
 
@@ -101,17 +107,17 @@ def main() -> int:
 
     with make_session() as session:
         if args.mode == "preview":
-            print_json(plan_output(plan, session, include_details=args.details), args.pretty)
+            print_json(plan_output(plan, session, user_id=args.user_id, include_details=args.details), args.pretty)
             return 0
 
         if args.mode == "apply":
             if not args.yes:
                 raise SystemExit("apply mode requires --yes after preview review and explicit approval")
-            result = apply_plan(plan, session)
+            result = apply_plan(plan, session, user_id=args.user_id)
             print_json(result, args.pretty)
             return 0 if result.get("applied") else 1
 
-        result = reconcile_plan(plan, session)
+        result = reconcile_plan(plan, session, user_id=args.user_id)
         print_json(result, args.pretty)
         return 1 if result["summary"]["issues"] else 0
 

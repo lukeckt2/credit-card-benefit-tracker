@@ -22,6 +22,8 @@ from app.schemas import (
 )
 from app.services import read as read_service
 from app.services import usage as usage_service
+from app.auth import get_current_user
+from app.models import User
 from app.services.errors import NotFoundError, ServiceValidationError
 
 
@@ -38,10 +40,12 @@ def benefit_periods(
     deadline_start: date | None = None,
     deadline_end: date | None = None,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitPeriodListResponse:
     return BenefitPeriodListResponse(
         benefit_periods=read_service.list_benefit_periods(
             session,
+            user_id=current_user.user_id,
             include_inactive_cards=include_inactive_cards,
             include_inactive_definitions=include_inactive_definitions,
             statuses=list(status) if status else None,
@@ -57,9 +61,10 @@ def benefit_periods(
 def benefit_period(
     period_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitPeriodRead:
     try:
-        return read_service.get_benefit_period(session, period_id)
+        return read_service.get_benefit_period(session, period_id, user_id=current_user.user_id)
     except NotFoundError as error:
         raise http_not_found(error) from error
 
@@ -71,10 +76,11 @@ def benefit_period(
 def period_usage_events(
     period_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> UsageEventListResponse:
     try:
         return UsageEventListResponse(
-            usage_events=read_service.list_usage_events(session, period_id)
+            usage_events=read_service.list_usage_events(session, period_id, user_id=current_user.user_id)
         )
     except NotFoundError as error:
         raise http_not_found(error) from error
@@ -85,11 +91,12 @@ def update_benefit_period(
     period_id: int,
     payload: PeriodUpdate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitPeriodRead:
     try:
-        usage_service.patch_period(session, period_id, payload)
+        usage_service.patch_period(session, period_id, payload, user_id=current_user.user_id)
         commit_or_conflict(session)
-        return read_service.get_benefit_period(session, period_id)
+        return read_service.get_benefit_period(session, period_id, user_id=current_user.user_id)
     except NotFoundError as error:
         session.rollback()
         raise http_not_found(error) from error
@@ -102,11 +109,12 @@ def update_benefit_period(
 def complete_benefit_period(
     period_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitPeriodRead:
     try:
-        usage_service.complete_period(session, period_id)
+        usage_service.complete_period(session, period_id, user_id=current_user.user_id)
         commit_or_conflict(session)
-        return read_service.get_benefit_period(session, period_id)
+        return read_service.get_benefit_period(session, period_id, user_id=current_user.user_id)
     except NotFoundError as error:
         session.rollback()
         raise http_not_found(error) from error
@@ -119,11 +127,12 @@ def complete_benefit_period(
 def reopen_benefit_period(
     period_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> BenefitPeriodRead:
     try:
-        usage_service.reopen_period(session, period_id)
+        usage_service.reopen_period(session, period_id, user_id=current_user.user_id)
         commit_or_conflict(session)
-        return read_service.get_benefit_period(session, period_id)
+        return read_service.get_benefit_period(session, period_id, user_id=current_user.user_id)
     except NotFoundError as error:
         session.rollback()
         raise http_not_found(error) from error
@@ -137,13 +146,14 @@ def add_usage_event(
     period_id: int,
     payload: UsageEventCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> UsageMutationResponse:
     try:
-        event = usage_service.create_usage_event(session, period_id, payload)
+        event = usage_service.create_usage_event(session, period_id, payload, user_id=current_user.user_id)
         commit_or_conflict(session)
         return UsageMutationResponse(
             usage_event=read_service.usage_event_to_read(event),
-            period=read_service.get_benefit_period(session, period_id),
+            period=read_service.get_benefit_period(session, period_id, user_id=current_user.user_id),
         )
     except NotFoundError as error:
         session.rollback()
@@ -158,13 +168,14 @@ def set_current_used_amount(
     period_id: int,
     payload: UsageAdjustmentCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ) -> UsageMutationResponse:
     try:
-        event = usage_service.create_usage_adjustment(session, period_id, payload)
+        event = usage_service.create_usage_adjustment(session, period_id, payload, user_id=current_user.user_id)
         commit_or_conflict(session)
         return UsageMutationResponse(
             usage_event=read_service.usage_event_to_read(event),
-            period=read_service.get_benefit_period(session, period_id),
+            period=read_service.get_benefit_period(session, period_id, user_id=current_user.user_id),
         )
     except NotFoundError as error:
         session.rollback()
