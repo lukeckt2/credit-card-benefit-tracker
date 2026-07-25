@@ -14,3 +14,4 @@ backups/
 !scripts/init_db.sql
 *.sql.gz
 .opencode
+new_card/.users_card
