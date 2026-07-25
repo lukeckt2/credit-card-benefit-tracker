@@ -187,26 +187,24 @@ If you are deploying this for personal use and do not want to set up Authelia, y
 
 When `APP_ENV=dev`, the application will automatically fall back to logging you in as the `DEV_DEFAULT_USER` if no proxy headers are present. This allows you to use the app immediately as a standard single-user application!
 
-### Architecture Flow
+## Architecture Diagram
 
 ```mermaid
+%%{init: {'sequence': {'mirrorActors': false, 'messageMargin': 15, 'noteMargin': 5, 'bottomMarginAdj': 5}}}%%
 sequenceDiagram
     participant Browser
     participant Authelia
     participant Reverse Proxy
     participant FastAPI
     participant DB
-
     Note over Browser: User opens app
     Browser->>Reverse Proxy: GET /
     Reverse Proxy->>Authelia: Auth check
     Authelia-->>Reverse Proxy: Not authenticated
     Reverse Proxy-->>Browser: Redirect to Authelia login
-
     Note over Browser: User logs in via Authelia
     Browser->>Authelia: POST /api/firstfactor {username, password}
     Authelia-->>Browser: Set session cookie
-
     Note over Browser: Authenticated request
     Browser->>Reverse Proxy: GET /api/dashboard (with Authelia cookie)
     Reverse Proxy->>Authelia: Verify cookie
