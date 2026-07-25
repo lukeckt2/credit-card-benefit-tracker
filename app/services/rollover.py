@@ -183,8 +183,10 @@ def generate_candidate_periods(
     return []
 
 
-def _definition_rows(session: Session, request: RolloverRequest, *, user_id: int):
-    statement = select(BenefitDefinition, CardMaster).join(CardMaster).where(CardMaster.user_id == user_id)
+def _definition_rows(session: Session, request: RolloverRequest, *, user_id: int | None = None):
+    statement = select(BenefitDefinition, CardMaster).join(CardMaster)
+    if user_id is not None:
+        statement = statement.where(CardMaster.user_id == user_id)
     if request.definition_ids:
         statement = statement.where(
             BenefitDefinition.benefit_definition_id.in_(request.definition_ids)
@@ -199,7 +201,7 @@ def _definition_rows(session: Session, request: RolloverRequest, *, user_id: int
 
 
 def build_rollover_response(
-    session: Session, request: RolloverRequest, *, user_id: int, dry_run: bool
+    session: Session, request: RolloverRequest, *, dry_run: bool, user_id: int | None = None
 ) -> RolloverResponse:
     periods: list[RolloverPeriod] = []
     warnings: list[RolloverWarning] = []
@@ -320,11 +322,11 @@ def build_rollover_response(
     )
 
 
-def preview_rollover(session: Session, request: RolloverRequest, *, user_id: int) -> RolloverResponse:
+def preview_rollover(session: Session, request: RolloverRequest, *, user_id: int | None = None) -> RolloverResponse:
     return build_rollover_response(session, request, user_id=user_id, dry_run=True)
 
 
-def apply_rollover(session: Session, request: RolloverRequest, *, user_id: int) -> RolloverResponse:
+def apply_rollover(session: Session, request: RolloverRequest, *, user_id: int | None = None) -> RolloverResponse:
     response = build_rollover_response(session, request, user_id=user_id, dry_run=False)
     created = 0
     for period in response.periods:
