@@ -178,7 +178,14 @@ It reads the `TRUSTED_PROXY_HEADER` (default: `Remote-User`) to verify the logge
 2. Set the `Remote-User` header to the username returned by Authelia.
 3. The application will seamlessly isolate data to the logged-in user and auto-provision users on first login.
 
-For local development without a proxy, the application falls back to `DEV_DEFAULT_USER` inside `.env` if `APP_ENV=dev`.
+### Single-User Mode (No Proxy Required)
+
+If you are deploying this for personal use and do not want to set up Authelia, you can bypass the proxy requirement entirely:
+1. Copy `.env.example` to `.env`.
+2. Ensure `APP_ENV=dev` is set in your environment or Docker container.
+3. Define `DEV_DEFAULT_USER=admin` (or any username) in your `.env`.
+
+When `APP_ENV=dev`, the application will automatically fall back to logging you in as the `DEV_DEFAULT_USER` if no proxy headers are present. This allows you to use the app immediately as a standard single-user application!
 
 ## Rollover Cron Entry Point
 
