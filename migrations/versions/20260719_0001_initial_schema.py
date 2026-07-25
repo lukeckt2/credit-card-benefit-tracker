@@ -104,7 +104,7 @@ def upgrade() -> None:
             ondelete="RESTRICT",
         ),
         sa.PrimaryKeyConstraint("card_id", name="pk_card_master"),
-        sa.UniqueConstraint("slug", name="uq_card_master_slug"),
+        sa.UniqueConstraint("user_id", "slug", name="uq_card_master_user_slug"),
         **TABLE_OPTIONS,
     )
     op.create_index("ix_card_master_user_id", "card_master", ["user_id"])
