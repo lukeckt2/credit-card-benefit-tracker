@@ -100,7 +100,7 @@ class User(TimestampMixin, Base):
 class CardMaster(TimestampMixin, Base):
     __tablename__ = "card_master"
     __table_args__ = (
-        UniqueConstraint("slug", name="uq_card_master_slug"),
+        UniqueConstraint("user_id", "slug", name="uq_card_master_user_slug"),
         CheckConstraint(
             f"status in ({_sql_values(CARD_STATUSES)})",
             name="status",
