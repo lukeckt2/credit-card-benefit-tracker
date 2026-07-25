@@ -3,14 +3,14 @@
 
 Use cases:
 
-- Preview a draft CSV without writing:
-  `.venv/bin/python scripts/import_card_csv.py preview --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty --details`
+- Preview a draft CSV without writing (against the dev database):
+  `APP_ENV=dev .venv/bin/python scripts/import_card_csv.py preview --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty --details`
 
-- Apply after reviewing preview output:
-  `.venv/bin/python scripts/import_card_csv.py apply --csv "new_card/Chase UA Business.csv" --user-id 1 --yes --pretty`
+- Apply after reviewing preview output (against the dev database):
+  `APP_ENV=dev .venv/bin/python scripts/import_card_csv.py apply --csv "new_card/Chase UA Business.csv" --user-id 1 --yes --pretty`
 
-- Reconcile database state after apply:
-  `.venv/bin/python scripts/import_card_csv.py reconcile --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty`
+- Reconcile database state after apply (against the dev database):
+  `APP_ENV=dev .venv/bin/python scripts/import_card_csv.py reconcile --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty`
 
 - Generate current periods for a specific date:
   add `--as-of YYYY-MM-DD` to preview/apply/reconcile.
@@ -105,21 +105,36 @@ def main() -> int:
     args = parse_args()
     plan = build_plan(args.csv, as_of=args.as_of)
 
-    with make_session() as session:
-        if args.mode == "preview":
-            print_json(plan_output(plan, session, user_id=args.user_id, include_details=args.details), args.pretty)
-            return 0
+    from sqlalchemy.exc import OperationalError
 
-        if args.mode == "apply":
-            if not args.yes:
-                raise SystemExit("apply mode requires --yes after preview review and explicit approval")
-            result = apply_plan(plan, session, user_id=args.user_id)
+    try:
+        with make_session() as session:
+            if args.mode == "preview":
+                print_json(plan_output(plan, session, user_id=args.user_id, include_details=args.details), args.pretty)
+                return 0
+
+            if args.mode == "apply":
+                if not args.yes:
+                    raise SystemExit("apply mode requires --yes after preview review and explicit approval")
+                result = apply_plan(plan, session, user_id=args.user_id)
+                print_json(result, args.pretty)
+                return 0 if result.get("applied") else 1
+
+            result = reconcile_plan(plan, session, user_id=args.user_id)
             print_json(result, args.pretty)
-            return 0 if result.get("applied") else 1
-
-        result = reconcile_plan(plan, session, user_id=args.user_id)
-        print_json(result, args.pretty)
-        return 1 if result["summary"]["issues"] else 0
+            return 1 if result["summary"]["issues"] else 0
+    except OperationalError as e:
+        err_str = str(e)
+        if "host.docker.internal" in err_str:
+            print(
+                "\n[ERROR] Database connection failed.\n"
+                "You are running the script natively on the host machine, but the database host is configured as 'host.docker.internal'.\n"
+                "Please run this command through docker-compose, or override the host by prepending `MIGRATION_DATABASE_HOST=127.0.0.1` (and `DATABASE_HOST=127.0.0.1`) to your command.\n",
+                file=sys.stderr,
+            )
+        else:
+            print(f"\n[ERROR] Database connection failed: {err_str}\n", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
