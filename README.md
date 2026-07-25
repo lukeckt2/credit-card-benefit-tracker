@@ -187,6 +187,40 @@ If you are deploying this for personal use and do not want to set up Authelia, y
 
 When `APP_ENV=dev`, the application will automatically fall back to logging you in as the `DEV_DEFAULT_USER` if no proxy headers are present. This allows you to use the app immediately as a standard single-user application!
 
+### Architecture Flow
+
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Authelia
+    participant Reverse Proxy
+    participant FastAPI
+    participant DB
+
+    Note over Browser: User opens app
+    Browser->>Reverse Proxy: GET /
+    Reverse Proxy->>Authelia: Auth check
+    Authelia-->>Reverse Proxy: Not authenticated
+    Reverse Proxy-->>Browser: Redirect to Authelia login
+
+    Note over Browser: User logs in via Authelia
+    Browser->>Authelia: POST /api/firstfactor {username, password}
+    Authelia-->>Browser: Set session cookie
+
+    Note over Browser: Authenticated request
+    Browser->>Reverse Proxy: GET /api/dashboard (with Authelia cookie)
+    Reverse Proxy->>Authelia: Verify cookie
+    Authelia-->>Reverse Proxy: Valid → set Remote-User: luke
+    Reverse Proxy->>FastAPI: GET /api/dashboard (Remote-User: luke)
+    FastAPI->>FastAPI: get_current_user() reads Remote-User header
+    FastAPI->>DB: SELECT user WHERE username='luke' (auto-create if missing)
+    DB-->>FastAPI: User object (user_id=2)
+    FastAPI->>DB: SELECT ... WHERE card_master.user_id = 2
+    DB-->>FastAPI: Luke's cards/benefits only
+    FastAPI-->>Reverse Proxy: Dashboard JSON (filtered)
+    Reverse Proxy-->>Browser: Dashboard JSON
+```
+
 ## Rollover Cron Entry Point
 
 Preview a specific month without writing:
