@@ -9,10 +9,11 @@ A self-hosted FastAPI + MariaDB application for tracking credit card benefits, u
 - SQLAlchemy models for the core runtime schema.
 - Alembic configuration and schema migrations.
 - MariaDB dump script using environment variables only.
+- Multi-user authentication via reverse proxy (e.g. Authelia) reading the `Remote-User` header.
 - REST API endpoints for dashboard reads, cards, benefit definitions, benefit periods, usage events, and admin rollover preview/apply.
 - Static frontend shell served by FastAPI at `/`.
 - Automated rollover cron entry point under `scripts/cron_jobs/`.
-- CSV-based card import for adding new cards and benefits.
+- CSV-based card import for adding new cards and benefits to a specific user.
 - Pytest coverage for backend read, usage, and rollover behavior.
 
 Database creation, user creation, and migration execution require explicit approval before touching MariaDB.
@@ -128,11 +129,11 @@ Once your database is running and tables are created, you can easily populate yo
 1. **Create a CSV file:** Create a CSV for the card you want to add (e.g., `Chase_Sapphire.csv`). The CSV should contain the card fields and benefit definitions.
 2. **Preview the import:**
    ```bash
-   docker-compose exec credit-card-benefits python scripts/import_card_csv.py preview --csv "your_csv_file.csv" --pretty --details
+   docker-compose exec credit-card-benefits python scripts/import_card_csv.py preview --csv "your_csv_file.csv" --user-id 1 --pretty --details
    ```
 3. **Apply the import:**
    ```bash
-   docker-compose exec credit-card-benefits python scripts/import_card_csv.py apply --csv "your_csv_file.csv" --yes --pretty
+   docker-compose exec credit-card-benefits python scripts/import_card_csv.py apply --csv "your_csv_file.csv" --user-id 1 --yes --pretty
    ```
 
 *Note: You do **not** need to manually run the rollover script (`month_start_rollover.sh`) after importing a brand new card. The CSV import script automatically handles creating the initial current benefit periods for you!*
@@ -149,6 +150,7 @@ When running `uvicorn` directly on the host, set `DATABASE_HOST=127.0.0.1` becau
 
 Implemented runtime endpoints include:
 
+- `GET /api/auth/me`
 - `GET /api/health`
 - `GET /api/dashboard`
 - `GET /api/cards` and `GET /api/cards/{card_id}`
@@ -165,7 +167,18 @@ Implemented runtime endpoints include:
 - `POST /api/admin/rollover/preview`
 - `POST /api/admin/rollover/apply`
 
-Usage totals returned by the API are derived from `usage_events`. Response amount fields are JSON numbers converted from backend `Decimal` values at the API boundary. `GET /api/dashboard` returns backend-prepared sections for the frontend. Rollover apply remains loopback-only when `ADMIN_LOCAL_ONLY=true`.
+Usage totals returned by the API are derived from `usage_events`. Response amount fields are JSON numbers converted from backend `Decimal` values at the API boundary. `GET /api/dashboard` returns backend-prepared sections for the frontend. Rollover apply remains loopback-only when `ADMIN_LOCAL_ONLY=true`. All read/write operations enforce multi-user isolation by implicitly filtering for the `user_id` provided by the authentication dependency.
+
+## Authentication (Authelia & Nginx Proxy Manager)
+
+The backend natively supports authentication via reverse proxy (e.g. Authelia + Nginx Proxy Manager).
+It reads the `TRUSTED_PROXY_HEADER` (default: `Remote-User`) to verify the logged-in user.
+
+1. Configure Nginx Proxy Manager to use `auth_request` to Authelia.
+2. Set the `Remote-User` header to the username returned by Authelia.
+3. The application will seamlessly isolate data to the logged-in user and auto-provision users on first login.
+
+For local development without a proxy, the application falls back to `DEV_DEFAULT_USER` inside `.env` if `APP_ENV=dev`.
 
 ## Rollover Cron Entry Point
 
