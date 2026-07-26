@@ -316,6 +316,24 @@ function benefitRow(row) {
   const unit = unitLabels[row.unit] ? `<span class="unit-label">${escapeHtml(unitLabels[row.unit])}</span>` : "";
   const href = escapeHtml(benefitLink(row));
 
+  let progressHtml = "";
+  const amountTotal = Number(row.amount_total);
+  const amountUsed = Number(row.amount_used) || 0;
+  if (amountTotal > 0 && amountUsed >= 0) {
+    const percent = Math.min(100, Math.round((amountUsed / amountTotal) * 100));
+    progressHtml = `
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+      </div>
+    `;
+  } else if (amountTotal === 0 && amountUsed > 0) {
+    progressHtml = `
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: 100%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+      </div>
+    `;
+  }
+
   tr.className = "dashboard-record";
   tr.dataset.cardId = row.card_id;
   tr.dataset.periodId = row.period_id;
@@ -325,7 +343,10 @@ function benefitRow(row) {
       <span class="status-text">${escapeHtml(status.label)}</span>
     </td>
     <td class="card-name" data-label="Card Name"><a class="record-link" href="${href}">${escapeHtml(row.card_name)}</a></td>
-    <td class="benefit-name" data-label="Coupon/Benefit"><a class="record-link" href="${href}">${escapeHtml(row.benefit_name)}</a></td>
+    <td class="benefit-name" data-label="Coupon/Benefit">
+      <a class="record-link" href="${href}">${escapeHtml(row.benefit_name)}</a>
+      ${progressHtml}
+    </td>
     <td data-label="Type">${escapeHtml(formatCycle(row.cycle_type))}</td>
     <td class="numeric" data-label="Total">${escapeHtml(formatAmount(row.amount_total, row.unit))} ${unit}</td>
     <td class="numeric used-column" data-label="Used">
@@ -521,6 +542,24 @@ function cardPeriodRow(period, definition, cardId) {
   const days = daysUntilDate(period.deadline);
   const pendingDeadlineText = period.status === "pending" ? `<span class="period-key">${escapeHtml(deadlineText(days))}</span>` : "";
 
+  let progressHtml = "";
+  const amountTotal = Number(period.amount_total);
+  const amountUsed = Number(period.amount_used) || 0;
+  if (amountTotal > 0 && amountUsed >= 0) {
+    const percent = Math.min(100, Math.round((amountUsed / amountTotal) * 100));
+    progressHtml = `
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+      </div>
+    `;
+  } else if (amountTotal === 0 && amountUsed > 0) {
+    progressHtml = `
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width: 100%; background: linear-gradient(90deg, #10b981, #059669);"></div>
+      </div>
+    `;
+  }
+
   row.id = `period-${period.benefit_period_id}`;
   row.className = `card-period-row period-status-${escapeHtml(period.status)}`;
   row.dataset.periodId = period.benefit_period_id;
@@ -531,7 +570,11 @@ function cardPeriodRow(period, definition, cardId) {
       <span class="status-text">${escapeHtml(visual.label)}</span>
       ${pendingDeadlineText}
     </td>
-    <td data-label="Period"><strong>${escapeHtml(period.period_key)}</strong><span class="period-key">${escapeHtml(period.period_start)} to ${escapeHtml(period.period_end)}</span></td>
+    <td data-label="Period">
+      <strong>${escapeHtml(period.period_key)}</strong>
+      <span class="period-key">${escapeHtml(period.period_start)} to ${escapeHtml(period.period_end)}</span>
+      ${progressHtml}
+    </td>
     <td data-label="Deadline" class="deadline-col"><strong>${escapeHtml(period.deadline)}</strong></td>
     <td class="numeric" data-label="Total">${escapeHtml(formatAmount(period.amount_total, definition.unit))} ${unit}</td>
     <td class="numeric used-column" data-label="Used">

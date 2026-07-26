@@ -945,3 +945,19 @@ dialog.panel::backdrop {
   text-decoration: underline;
   opacity: 0.8;
 }
+/* Progress Bar */
+.progress-bar-container {
+  margin-block-start: 0.5rem;
+  background: var(--line-strong);
+  border-radius: 9999px;
+  overflow: hidden;
+  block-size: 6px;
+  inline-size: 100%;
+}
+
+.progress-bar-fill {
+  background: var(--accent-gradient);
+  block-size: 100%;
+  transition: width 0.3s ease;
+}
+
