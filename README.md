@@ -1,4 +1,4 @@
-# Credit Card Benefits Tracker
+# CATCH
 
 A self-hosted FastAPI + MariaDB application for tracking credit card benefits, usage, and rollovers.
 

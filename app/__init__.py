@@ -1,1 +1,1 @@
-"""Credit card benefits tracker application package."""
+"""CATCH application package."""

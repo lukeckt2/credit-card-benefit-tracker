@@ -24,7 +24,7 @@ from app.routers import admin, auth, benefit_definitions, benefit_periods, cards
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
-app = FastAPI(title="Credit Card Benefits Tracker")
+app = FastAPI(title="CATCH")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 

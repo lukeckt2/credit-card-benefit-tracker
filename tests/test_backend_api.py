@@ -118,7 +118,7 @@ def test_dashboard_derives_usage_totals(client):
 
     frontend = test_client.get("/")
     assert frontend.status_code == 200
-    assert "Credit Card Benefits Tracker" in frontend.text
+    assert "CATCH" in frontend.text
 
     response = test_client.get("/api/dashboard", params={"as_of": "2026-07-19"})
 
