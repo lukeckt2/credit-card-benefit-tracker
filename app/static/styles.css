@@ -601,7 +601,8 @@ dialog.panel::backdrop {
   }
 }
 
-.benefit-status {
+.benefit-status,
+.benefit-status-select {
   border: 1px solid var(--line);
   border-radius: 9999px;
   padding-inline: 0.75rem;
@@ -623,6 +624,23 @@ dialog.panel::backdrop {
     background: rgba(245, 158, 11, 0.1);
     color: #d97706;
   }
+}
+
+.benefit-status-select {
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  padding-inline-end: 1.5rem;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1em;
+}
+
+.benefit-status-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* Links */

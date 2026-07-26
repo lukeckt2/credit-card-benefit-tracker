@@ -555,7 +555,10 @@ function renderBenefitCard(definition, cardId) {
         <h4>${escapeHtml(definition.name)}</h4>
         <p class="muted">${escapeHtml(periods.length)} period${periods.length === 1 ? "" : "s"}</p>
       </div>
-      <span class="benefit-status ${definition.active ? "active" : "inactive"}">${definition.active ? "Active" : "Inactive"}</span>
+      <select class="benefit-status-select ${definition.active ? "active" : "inactive"}" data-definition-id="${escapeHtml(definition.benefit_definition_id)}" aria-label="Toggle active status for ${escapeHtml(definition.name)}">
+        <option value="true" ${definition.active ? "selected" : ""}>Active</option>
+        <option value="false" ${!definition.active ? "selected" : ""}>Inactive</option>
+      </select>
     </div>
     <div class="table-wrap card-table-wrap">
       <table class="benefit-table card-period-table">
@@ -748,6 +751,34 @@ async function saveUsedAmount(form) {
   }
 }
 
+async function updateBenefitStatus(selectElement) {
+  const definitionId = selectElement.dataset.definitionId;
+  const newActive = selectElement.value === "true";
+  selectElement.disabled = true;
+  clearError();
+  clearNotice();
+
+  try {
+    await fetchJson(`/api/benefit-definitions/${encodeURIComponent(definitionId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: newActive }),
+    });
+
+    const route = routeFromHash();
+    if (route.type === "card") {
+      cardDetails.delete(route.cardId);
+      await loadCardDetail(route.cardId, { force: true });
+    }
+    showNotice("Benefit status updated.");
+  } catch (error) {
+    showError(error.message || "Unable to update benefit status.");
+    selectElement.value = newActive ? "false" : "true";
+  } finally {
+    selectElement.disabled = false;
+  }
+}
+
 async function refreshCurrentView() {
   const route = routeFromHash();
   await Promise.all([loadAuth(), loadCards(), loadDashboard()]);
@@ -762,6 +793,12 @@ document.addEventListener("submit", (event) => {
   if (!form) return;
   event.preventDefault();
   saveUsedAmount(form);
+});
+
+document.addEventListener("change", (event) => {
+  if (event.target.classList.contains("benefit-status-select")) {
+    updateBenefitStatus(event.target);
+  }
 });
 
 document.addEventListener("click", (event) => {

@@ -80,6 +80,16 @@ class BenefitDefinitionListResponse(BaseModel):
     benefit_definitions: list[BenefitDefinitionRead]
 
 
+class BenefitDefinitionUpdate(StrictBaseModel):
+    active: bool | None = None
+
+    @model_validator(mode="after")
+    def require_update(self) -> "BenefitDefinitionUpdate":
+        if all(value is None for value in self.model_dump().values()):
+            raise ValueError("At least one field must be provided.")
+        return self
+
+
 class UsageTotals(BaseModel):
     amount_used: float
     amount_remaining: float
