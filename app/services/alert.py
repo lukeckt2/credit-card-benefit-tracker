@@ -54,6 +54,7 @@ def check_and_send_expiration_alerts(session: Session, days_ahead: int = 15) -> 
         .where(BenefitPeriod.deadline <= target_date)
         .where(BenefitPeriod.deadline >= date.today())
         .where(BenefitPeriod.status == "pending")
+        .where(BenefitDefinition.active == True)
     )
 
     from collections import defaultdict
