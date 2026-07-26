@@ -631,7 +631,10 @@ function renderCardDetail(card, highlightPeriodId) {
         <h2>${escapeHtml(cardDisplayName(card))}</h2>
         <p class="muted">${escapeHtml(card.card_name || cardDisplayName(card))}</p>
       </div>
-      <div class="card-source">${cardSourceLink(card)}</div>
+      <div class="card-actions">
+        ${cardSourceLink(card)}
+        <button class="delete-card-btn" data-card-id="${card.card_id}" style="margin-inline-start: 1rem; color: var(--text); background: transparent; border: 1px solid var(--line-strong); border-radius: 4px; padding: 0.25rem 0.5rem; cursor: pointer;">Delete</button>
+      </div>
     </div>
     <div class="summary-grid">
       ${cardSummaryItems(card, definitions.length, periodCount)}
@@ -779,6 +782,33 @@ async function updateBenefitStatus(selectElement) {
   }
 }
 
+async function deleteCard(cardId) {
+  if (!confirm("Are you sure you want to delete this card and all its associated data? This action cannot be undone.")) return;
+  
+  clearError();
+  clearNotice();
+  try {
+    const response = await fetch(`/api/cards/${encodeURIComponent(cardId)}`, {
+      method: "DELETE"
+    });
+    
+    if (response.status === 401) {
+      showError("Unauthorized or session expired. Please refresh the page.");
+      return;
+    }
+    if (!response.ok) {
+      throw new Error(await readErrorMessage(response));
+    }
+    
+    showNotice("Card deleted successfully.");
+    cardDetails.delete(Number(cardId));
+    window.location.hash = "#dashboard";
+    await Promise.all([loadCards(), loadDashboard()]);
+  } catch (error) {
+    showError(error.message || "Unable to delete card.");
+  }
+}
+
 async function refreshCurrentView() {
   const route = routeFromHash();
   await Promise.all([loadAuth(), loadCards(), loadDashboard()]);
@@ -802,6 +832,12 @@ document.addEventListener("change", (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  const deleteBtn = event.target.closest(".delete-card-btn");
+  if (deleteBtn) {
+    deleteCard(deleteBtn.dataset.cardId);
+    return;
+  }
+
   const hashLink = event.target.closest("a[href^='#']");
   if (hashLink) {
     const hash = hashLink.getAttribute("href");
