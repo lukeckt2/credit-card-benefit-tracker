@@ -15,4 +15,5 @@ backups/
 *.sql.gz
 .opencode
 new_card/.users_card
+new_card/users_card
 *.log
