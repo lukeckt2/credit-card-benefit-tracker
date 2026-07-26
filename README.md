@@ -219,7 +219,9 @@ sequenceDiagram
     Reverse Proxy-->>Browser: Dashboard JSON
 ```
 
-## Rollover Cron Entry Point
+## Scheduled Jobs (Cron)
+
+### Benefit Rollovers
 
 Preview a specific month without writing:
 
@@ -243,6 +245,29 @@ For advanced manual windows, call the Python entry point directly:
 
 ```bash
 scripts/cron_jobs/rollover.py apply --window-start 2026-08-01 --window-end 2026-08-31 --only-periods-starting-in-window --yes --pretty
+```
+
+### Expiration Alerts
+
+You can schedule the application to send email alerts to users when their benefit periods are expiring (by default, 15 days before the deadline).
+
+Set up your SMTP configuration in `.env`:
+```ini
+SMTP_SERVER=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_username
+SMTP_PASSWORD=your_smtp_password
+SMTP_FROM=alerts@creditcardbenefits.local
+```
+
+You can run the script manually:
+```bash
+scripts/cron_jobs/daily_expiration_alerts.sh --days-ahead 15
+```
+
+Or configure it to run daily via cron (e.g., at 8:00 AM):
+```cron
+0 8 * * * /path/to/credit_card_benefits/scripts/cron_jobs/daily_expiration_alerts.sh >> /path/to/credit_card_benefits/expiration_alerts.log 2>&1
 ```
 
 ## Tests
