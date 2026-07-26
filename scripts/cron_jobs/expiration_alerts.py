@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Check for expiring benefits and send email alerts."""
+"""Check for expiring benefits and send email alerts.
+ 
+Example cron usage:
+    0 8 * * * /path/to/credit_card_benefits/scripts/cron_jobs/daily_expiration_alerts.sh --days-ahead 15 >> expiration_alerts.log 2>&1
+"""
 
 from __future__ import annotations
 

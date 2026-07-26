@@ -265,9 +265,9 @@ You can run the script manually:
 scripts/cron_jobs/daily_expiration_alerts.sh --days-ahead 15
 ```
 
-Or configure it to run daily via cron (e.g., at 8:00 AM):
+Or configure it to run daily via cron (e.g., at 8:00 AM) and explicitly specify the number of days ahead:
 ```cron
-0 8 * * * /path/to/credit_card_benefits/scripts/cron_jobs/daily_expiration_alerts.sh >> /path/to/credit_card_benefits/expiration_alerts.log 2>&1
+0 8 * * * /path/to/credit_card_benefits/scripts/cron_jobs/daily_expiration_alerts.sh --days-ahead 15 >> /path/to/credit_card_benefits/expiration_alerts.log 2>&1
 ```
 
 ## Tests
