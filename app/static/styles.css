@@ -457,6 +457,24 @@ input {
   container-type: inline-size;
 }
 
+/* Dialog */
+dialog.panel {
+  margin: auto;
+  width: min(90vw, 500px);
+  padding: 2rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 1.5rem;
+  background: var(--panel-bg);
+  color: var(--text);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+}
+
+dialog.panel::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
 .card-detail-panel,
 .table-panel {
   padding: 1.5rem;

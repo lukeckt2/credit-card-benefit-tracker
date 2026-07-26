@@ -828,4 +828,120 @@ async function initialize() {
   await handleRoute();
 }
 
+const uploadCsvBtn = document.querySelector("#upload-csv-btn");
+const csvUploadInput = document.querySelector("#csv-upload-input");
+const previewModal = document.querySelector("#preview-modal");
+const previewContent = document.querySelector("#preview-content");
+const confirmImportBtn = document.querySelector("#confirm-import-btn");
+const cancelImportBtn = document.querySelector("#cancel-import-btn");
+
+let currentImportToken = null;
+
+if (uploadCsvBtn && csvUploadInput) {
+  uploadCsvBtn.addEventListener("click", () => {
+    csvUploadInput.click();
+  });
+
+  csvUploadInput.addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      uploadCsvBtn.disabled = true;
+      uploadCsvBtn.textContent = "Uploading...";
+      clearError();
+      clearNotice();
+
+      const response = await fetch("/api/cards/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+         throw new Error("Failed to upload CSV for preview");
+      }
+
+      const previewData = await response.json();
+      currentImportToken = previewData.token;
+      
+      const summary = previewData.summary;
+      let html = `<p><strong>File:</strong> ${escapeHtml(file.name)}</p>`;
+      
+      if (previewData.planned_records && previewData.planned_records.card) {
+          html += `<h3>Card: ${escapeHtml(previewData.planned_records.card.display_name)}</h3>`;
+      }
+      
+      if (previewData.planned_records && previewData.planned_records.benefit_definitions && previewData.planned_records.benefit_definitions.length > 0) {
+          html += `<h4 style="margin-block-end: 0.5rem;">Benefits to Add (${summary.planned_benefit_definitions}):</h4><ul style="margin-block-start: 0; padding-inline-start: 1.5rem; font-size: 0.9rem;">`;
+          for (const benefit of previewData.planned_records.benefit_definitions) {
+              html += `<li>${escapeHtml(benefit.name)} (Cycle: ${escapeHtml(benefit.cycle_type)})</li>`;
+          }
+          html += `</ul>`;
+      }
+
+      if (previewData.warnings && previewData.warnings.length > 0) {
+          html += `<h4 style="color: orange; margin-block-end: 0.5rem;">Warnings:</h4><ul style="color: orange; margin-block-start: 0; padding-inline-start: 1.5rem; font-size: 0.9rem;">`;
+          for (const warning of previewData.warnings) {
+              html += `<li>${escapeHtml(warning.message)} (Row ${warning.row || 'N/A'})</li>`;
+          }
+          html += `</ul>`;
+      }
+      
+      if (summary.blocking_issues) {
+          html += `<p style="color: var(--error); font-weight: bold; margin-block-start: 1rem;">Cannot import: There are blocking issues or conflicts.</p>`;
+          confirmImportBtn.disabled = true;
+      } else {
+          confirmImportBtn.disabled = false;
+      }
+
+      previewContent.innerHTML = html;
+      previewModal.showModal();
+
+    } catch (error) {
+      showError(`Upload error: ${error.message}`);
+    } finally {
+      uploadCsvBtn.disabled = false;
+      uploadCsvBtn.textContent = "Upload CSV";
+      csvUploadInput.value = ""; // Reset input
+    }
+  });
+
+  cancelImportBtn.addEventListener("click", () => {
+      previewModal.close();
+      currentImportToken = null;
+  });
+
+  confirmImportBtn.addEventListener("click", async () => {
+      if (!currentImportToken) return;
+
+      try {
+          confirmImportBtn.disabled = true;
+          confirmImportBtn.textContent = "Importing...";
+
+          const response = await fetch("/api/cards/import", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token: currentImportToken }),
+          });
+
+          if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.detail?.message || "Import failed");
+          }
+
+          showNotice("Successfully imported card.");
+          previewModal.close();
+          await Promise.all([loadDashboard(), loadCards()]);
+      } catch (error) {
+          showError(`Import error: ${error.message}`);
+      } finally {
+          confirmImportBtn.disabled = false;
+          confirmImportBtn.textContent = "Confirm Import";
+      }
+  });
+}
+
 initialize();
