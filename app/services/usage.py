@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.models import BenefitPeriod, UsageEvent
-from app.schemas import PeriodUpdate, UsageAdjustmentCreate, UsageEventCreate
+from app.schemas import PeriodUpdate, QuickCompleteCreate, UsageAdjustmentCreate, UsageEventCreate
 from app.services.errors import NotFoundError, ServiceValidationError
 from app.services.read import usage_total_for_period
 
@@ -129,6 +129,36 @@ def create_usage_adjustment(
         note=payload.note,
         used_at=payload.used_at or utc_now(),
         source_key=payload.source_key,
+    )
+    session.add(event)
+    session.flush()
+    sync_completion_from_usage_total(session, period)
+    session.flush()
+    return event
+
+
+def quick_complete_period(
+    session: Session, period_id: int, payload: QuickCompleteCreate, *, user_id: int
+) -> UsageEvent:
+    period = get_period_for_update(session, period_id, user_id=user_id)
+    current_used = usage_total_for_period(session, period_id)
+    
+    if payload.completed and period.amount_total is None:
+        raise ServiceValidationError("Cannot quick-complete a benefit without a total amount.")
+
+    # If checked, set to amount_total. If unchecked, set to 0.
+    target_used = period.amount_total if payload.completed else Decimal("0")
+    
+    delta = target_used - current_used
+    if delta == 0:
+        raise ServiceValidationError("No change needed.")
+        
+    event = UsageEvent(
+        benefit_period_id=period_id,
+        event_type="adjustment",
+        amount_delta=delta,
+        note=payload.note or ("Auto-completed via checkbox" if payload.completed else "Reset via checkbox"),
+        used_at=utc_now(),
     )
     session.add(event)
     session.flush()

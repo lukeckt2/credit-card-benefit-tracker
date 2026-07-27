@@ -195,6 +195,11 @@ class UsageAdjustmentCreate(StrictBaseModel):
     source_key: str | None = Field(default=None, max_length=512)
 
 
+class QuickCompleteCreate(StrictBaseModel):
+    completed: bool
+    note: str | None = None
+
+
 class UsageEventRead(BaseModel):
     usage_event_id: int
     benefit_period_id: int

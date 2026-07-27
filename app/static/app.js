@@ -353,6 +353,9 @@ function benefitRow(row) {
       <form class="used-form" data-period-id="${escapeHtml(row.period_id)}" data-card-id="${escapeHtml(row.card_id)}" data-note="Updated from dashboard Used column">
         <input name="current_used_amount" type="text" inputmode="decimal" autocomplete="off" value="${escapeHtml(formatUsedInput(row.amount_used))}" aria-label="Used amount for ${escapeHtml(row.benefit_name)}" />
         <button type="submit">Save</button>
+        ${amountTotal > 0 ? `<input type="checkbox" class="quick-complete-checkbox" 
+          title="Quick Complete"
+          ${row.status === 'completed' ? 'checked' : ''} />` : ''}
       </form>
     </td>
     <td class="numeric remaining-cell" data-label="Remaining">${escapeHtml(formatAmount(row.amount_remaining, row.unit))} ${unit}</td>
@@ -581,6 +584,9 @@ function cardPeriodRow(period, definition, cardId) {
       <form class="used-form" data-period-id="${escapeHtml(period.benefit_period_id)}" data-card-id="${escapeHtml(cardId)}" data-note="Updated from card tab Used column">
         <input name="current_used_amount" type="text" inputmode="decimal" autocomplete="off" value="${escapeHtml(formatUsedInput(period.amount_used))}" aria-label="Used amount for ${escapeHtml(definition.name)} ${escapeHtml(period.period_key)}" />
         <button type="submit">Save</button>
+        ${amountTotal > 0 ? `<input type="checkbox" class="quick-complete-checkbox" 
+          title="Quick Complete"
+          ${period.status === 'completed' ? 'checked' : ''} />` : ''}
       </form>
     </td>
     <td class="numeric remaining-cell" data-label="Remaining">${escapeHtml(formatAmount(period.amount_remaining, definition.unit))} ${unit}</td>
@@ -775,7 +781,7 @@ async function saveUsedAmount(form) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         current_used_amount: value,
-        event_type: "correction",
+        event_type: "adjustment",
         note: form.dataset.note || "Updated from dashboard Used column",
       }),
     });
@@ -1059,5 +1065,52 @@ if (uploadCsvBtn && csvUploadInput) {
       }
   });
 }
+
+async function quickCompletePeriod(form, isChecked) {
+  const periodId = form.dataset.periodId;
+  const cardId = form.dataset.cardId ? Number(form.dataset.cardId) : null;
+  const route = routeFromHash();
+  
+  setFormBusy(form, true);
+  clearError();
+  clearNotice();
+
+  try {
+    await fetchJson(`/api/benefit-periods/${encodeURIComponent(periodId)}/quick-complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completed: isChecked }),
+    });
+
+    if (cardId) cardDetails.delete(cardId);
+    await loadDashboard({ keepNotice: true });
+    if (route.type === "card") {
+      cardDetails.delete(route.cardId);
+      await loadCardDetail(route.cardId, {
+        force: true,
+        highlightPeriodId: route.periodId || periodId,
+      });
+    }
+    if (errorBox.hidden) showNotice("Usage updated.");
+  } catch (error) {
+    showError(error.message || "Unable to process quick complete.");
+    // Revert checkbox state on error
+    const checkbox = form.querySelector(".quick-complete-checkbox");
+    if (checkbox) {
+      checkbox.checked = !isChecked;
+    }
+  } finally {
+    setFormBusy(form, false);
+  }
+}
+
+document.addEventListener("change", (event) => {
+  if (event.target.classList.contains("quick-complete-checkbox")) {
+    const form = event.target.closest(".used-form");
+    if (form) {
+      quickCompletePeriod(form, event.target.checked);
+    }
+  }
+});
 
 initialize();

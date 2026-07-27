@@ -569,3 +569,38 @@ def test_rollover_apply_is_local_only_by_default(client, monkeypatch):
     )
 
     assert response.status_code == 403
+
+
+def test_quick_complete_checkbox_flow(client):
+    test_client, ids, TestingSessionLocal = client
+    period_id = ids["period_id"]
+
+    # 1. Complete the benefit
+    response = test_client.post(
+        f"/api/benefit-periods/{period_id}/quick-complete",
+        json={"completed": True}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["period"]["status"] == "completed"
+    assert data["usage_event"]["amount_delta"] == 15.00  # 20.00 total - 5.00 initial
+    assert data["usage_event"]["event_type"] == "adjustment"
+
+    # 2. Try to complete again (zero-delta no-op should raise validation error)
+    response = test_client.post(
+        f"/api/benefit-periods/{period_id}/quick-complete",
+        json={"completed": True}
+    )
+    assert response.status_code == 422
+    assert "No change needed" in response.json()["detail"]
+
+    # 3. Uncheck/reset the benefit to 0
+    response = test_client.post(
+        f"/api/benefit-periods/{period_id}/quick-complete",
+        json={"completed": False}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["period"]["status"] == "pending"
+    assert data["usage_event"]["amount_delta"] == -20.00  # Reset back to 0
+    assert data["usage_event"]["event_type"] == "adjustment"

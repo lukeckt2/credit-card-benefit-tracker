@@ -768,9 +768,15 @@ dialog.panel::backdrop {
 /* Forms in Table */
 .used-form {
   display: grid;
-  grid-template-columns: minmax(5rem, 1fr) auto;
+  grid-template-columns: minmax(5rem, 1fr) auto auto;
   gap: 0.5rem;
   align-items: center;
+}
+
+.used-form .quick-complete-checkbox {
+  margin-inline-start: 0.25rem;
+  cursor: pointer;
+  transform: scale(1.2);
 }
 
 .unit-label,
@@ -887,7 +893,7 @@ dialog.panel::backdrop {
     }
 
     & .used-form {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
     }
   }
 
