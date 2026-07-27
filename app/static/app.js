@@ -322,9 +322,7 @@ function benefitRow(row) {
   if (amountTotal > 0 && amountUsed >= 0) {
     const percent = Math.min(100, Math.round((amountUsed / amountTotal) * 100));
     progressHtml = `
-      <div class="progress-bar-container">
-        <div class="progress-bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #10b981, #059669);"></div>
-      </div>
+      <input type="range" class="progress-slider" min="0" max="${amountTotal}" step="1" value="${amountUsed}" style="--progress-percent: ${percent}%;" aria-label="Adjust used amount">
     `;
   } else if (amountTotal === 0 && amountUsed > 0) {
     progressHtml = `
@@ -551,9 +549,7 @@ function cardPeriodRow(period, definition, cardId) {
   if (amountTotal > 0 && amountUsed >= 0) {
     const percent = Math.min(100, Math.round((amountUsed / amountTotal) * 100));
     progressHtml = `
-      <div class="progress-bar-container">
-        <div class="progress-bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #10b981, #059669);"></div>
-      </div>
+      <input type="range" class="progress-slider" min="0" max="${amountTotal}" step="1" value="${amountUsed}" style="--progress-percent: ${percent}%;" aria-label="Adjust used amount">
     `;
   } else if (amountTotal === 0 && amountUsed > 0) {
     progressHtml = `
@@ -1111,6 +1107,38 @@ document.addEventListener("change", (event) => {
       quickCompletePeriod(form, event.target.checked);
     }
   }
+  
+  if (event.target.classList.contains("progress-slider")) {
+    const slider = event.target;
+    const row = slider.closest("tr");
+    if (row) {
+      const form = row.querySelector(".used-form");
+      if (form) {
+        saveUsedAmount(form);
+      }
+    }
+  }
+});
+
+document.addEventListener("input", (event) => {
+  if (event.target.classList.contains("progress-slider")) {
+    const slider = event.target;
+    const max = Number(slider.max);
+    const value = Number(slider.value);
+    const percent = max > 0 ? (value / max) * 100 : 0;
+    slider.style.setProperty("--progress-percent", `${percent}%`);
+    
+    const row = slider.closest("tr");
+    if (row) {
+      const input = row.querySelector('input[name="current_used_amount"]');
+      if (input) {
+        // Format to handle decimal correctly and avoid precision issues
+        const formattedValue = formatUsedInput(slider.value);
+        input.value = formattedValue;
+      }
+    }
+  }
 });
 
 initialize();
+
