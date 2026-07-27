@@ -11,9 +11,11 @@ A self-hosted FastAPI + MariaDB application for tracking credit card benefits, u
 - MariaDB dump script using environment variables only.
 - Multi-user authentication via reverse proxy (e.g. Authelia) reading the `Remote-User` header.
 - REST API endpoints for dashboard reads, cards, benefit definitions, benefit periods, usage events, and admin rollover preview/apply.
-- Static frontend shell served by FastAPI at `/`.
+- Static frontend shell served by FastAPI at `/` with interactive features like visual progress bars.
+- In-app management features like UI-based card deletion and toggling active benefits.
 - Automated rollover cron entry point under `scripts/cron_jobs/`.
-- CSV-based card import for adding new cards and benefits to a specific user.
+- Automated email alerts for expiring benefits.
+- CSV-based card import (via CLI or web UI) for adding new cards and benefits to a specific user.
 - Pytest coverage for backend read, usage, and rollover behavior.
 
 Database creation, user creation, and migration execution require explicit approval before touching MariaDB.
@@ -124,8 +126,12 @@ docker-compose up -d --build
 
 ## Adding Cards via CSV
 
-Once your database is running and tables are created, you can easily populate your database using the provided CSV import script.
+Once your database is running and tables are created, you can easily populate your database using the provided CSV import features.
 
+**Via Web UI (Recommended):**
+You can upload a CSV directly through the CATCH web interface. It will provide a visual preview of the cards and benefits to be imported before you confirm.
+
+**Via CLI:**
 1. **Create a CSV file:** Create a CSV for the card you want to add (e.g., `Chase_Sapphire.csv`). The CSV should contain the card fields and benefit definitions.
 2. **Preview the import:**
    ```bash
@@ -155,7 +161,10 @@ Implemented runtime endpoints include:
 - `GET /api/dashboard`
 - `GET /api/cards` and `GET /api/cards/{card_id}`
 - `DELETE /api/cards/{card_id}`
+- `POST /api/cards/upload`
+- `POST /api/cards/import`
 - `GET /api/benefit-definitions` and `GET /api/benefit-definitions/{definition_id}`
+- `PATCH /api/benefit-definitions/{definition_id}`
 - `DELETE /api/benefit-definitions/{benefit_definition_id}`
 - `GET /api/benefit-periods` and `GET /api/benefit-periods/{period_id}`
 - `GET /api/benefit-periods/{period_id}/usage-events`
