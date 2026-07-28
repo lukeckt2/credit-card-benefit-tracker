@@ -1,4 +1,4 @@
-"""Card read endpoints."""
+"""Card endpoints."""
 
 from __future__ import annotations
 

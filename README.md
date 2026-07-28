@@ -155,13 +155,17 @@ Implemented runtime endpoints include:
 - `GET /api/dashboard`
 - `GET /api/cards` and `GET /api/cards/{card_id}`
 - `DELETE /api/cards/{card_id}`
+- `POST /api/cards/upload`
+- `POST /api/cards/import`
 - `GET /api/benefit-definitions` and `GET /api/benefit-definitions/{definition_id}`
+- `PATCH /api/benefit-definitions/{definition_id}`
 - `DELETE /api/benefit-definitions/{benefit_definition_id}`
 - `GET /api/benefit-periods` and `GET /api/benefit-periods/{period_id}`
 - `GET /api/benefit-periods/{period_id}/usage-events`
 - `PATCH /api/benefit-periods/{period_id}`
 - `POST /api/benefit-periods/{period_id}/complete`
 - `POST /api/benefit-periods/{period_id}/reopen`
+- `POST /api/benefit-periods/{period_id}/quick-complete`
 - `POST /api/benefit-periods/{period_id}/usage-events`
 - `POST /api/benefit-periods/{period_id}/usage-adjustment`
 - `POST /api/admin/rollover/preview`
