@@ -768,9 +768,15 @@ dialog.panel::backdrop {
 /* Forms in Table */
 .used-form {
   display: grid;
-  grid-template-columns: minmax(5rem, 1fr) auto;
+  grid-template-columns: minmax(5rem, 1fr) auto auto;
   gap: 0.5rem;
   align-items: center;
+}
+
+.used-form .quick-complete-checkbox {
+  margin-inline-start: 0.25rem;
+  cursor: pointer;
+  transform: scale(1.2);
 }
 
 .unit-label,
@@ -887,7 +893,7 @@ dialog.panel::backdrop {
     }
 
     & .used-form {
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr auto auto;
     }
   }
 
@@ -945,7 +951,84 @@ dialog.panel::backdrop {
   text-decoration: underline;
   opacity: 0.8;
 }
-/* Progress Bar */
+/* Progress Slider */
+.progress-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  min-height: 6px;
+  max-height: 6px;
+  background: var(--line-strong);
+  border-radius: 9999px;
+  outline: none;
+  margin-block-start: 0.5rem;
+  padding: 0;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  cursor: pointer;
+  background-image: linear-gradient(90deg, #10b981, #059669);
+  background-size: var(--progress-percent, 0%) 100%;
+  background-repeat: no-repeat;
+  transition: opacity 0.2s;
+}
+
+[data-theme="dark"] .progress-slider {
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.progress-slider:hover {
+  opacity: 0.9;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #059669;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.progress-slider:hover::-webkit-slider-thumb,
+.progress-slider:focus::-webkit-slider-thumb,
+.progress-slider:active::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.progress-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+
+.progress-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #059669;
+  cursor: grab;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.progress-slider:hover::-moz-range-thumb,
+.progress-slider:focus::-moz-range-thumb,
+.progress-slider:active::-moz-range-thumb {
+  opacity: 1;
+}
+
+.progress-slider::-moz-range-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+
 .progress-bar-container {
   margin-block-start: 0.5rem;
   background: var(--line-strong);
@@ -959,5 +1042,25 @@ dialog.panel::backdrop {
   background: var(--accent-gradient);
   block-size: 100%;
   transition: width 0.3s ease;
+}
+
+/* Unsaved hint shown after slider is moved */
+.slider-unsaved-hint {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--orange);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.25s ease, max-height 0.25s ease;
+  pointer-events: none;
+  margin-block-start: 0.15rem;
+  letter-spacing: 0.01em;
+}
+
+.slider-unsaved-hint.visible {
+  opacity: 1;
+  max-height: 2em;
 }
 

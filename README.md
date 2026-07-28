@@ -171,6 +171,7 @@ Implemented runtime endpoints include:
 - `PATCH /api/benefit-periods/{period_id}`
 - `POST /api/benefit-periods/{period_id}/complete`
 - `POST /api/benefit-periods/{period_id}/reopen`
+- `POST /api/benefit-periods/{period_id}/quick-complete`
 - `POST /api/benefit-periods/{period_id}/usage-events`
 - `POST /api/benefit-periods/{period_id}/usage-adjustment`
 - `POST /api/admin/rollover/preview`

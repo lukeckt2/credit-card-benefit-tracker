@@ -247,7 +247,7 @@ def upgrade() -> None:
             server_default=sa.text("CURRENT_TIMESTAMP"),
         ),
         sa.CheckConstraint(
-            "event_type in ('import_initial', 'usage', 'adjustment', 'correction')",
+            "event_type in ('import_initial', 'usage', 'adjustment', 'quick_complete')",
             name=op.f("ck_usage_events_event_type"),
         ),
         sa.CheckConstraint(

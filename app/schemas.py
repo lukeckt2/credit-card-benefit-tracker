@@ -21,8 +21,8 @@ CycleType = Literal[
     "multi_year",
 ]
 PeriodStatus = Literal["pending", "completed", "skipped", "expired"]
-ManualUsageEventType = Literal["usage", "adjustment", "correction"]
-UsageEventType = Literal["import_initial", "usage", "adjustment", "correction"]
+ManualUsageEventType = Literal["usage", "adjustment", "quick_complete"]
+UsageEventType = Literal["import_initial", "usage", "adjustment", "quick_complete"]
 
 
 def decimal_to_api(value: Decimal | int | float | str | None) -> float | None:
@@ -189,10 +189,15 @@ class UsageEventCreate(StrictBaseModel):
 
 class UsageAdjustmentCreate(StrictBaseModel):
     current_used_amount: Decimal
-    event_type: Literal["adjustment", "correction"] = "adjustment"
+    event_type: Literal["adjustment", "quick_complete"] = "adjustment"
     note: str | None = None
     used_at: datetime | None = None
     source_key: str | None = Field(default=None, max_length=512)
+
+
+class QuickCompleteCreate(StrictBaseModel):
+    completed: bool
+    note: str | None = None
 
 
 class UsageEventRead(BaseModel):

@@ -1,5 +1,5 @@
 card_slug,card_display_name,card_card_name,card_issuer,card_annual_fee,card_status,card_open_date,card_open_month,card_open_day,card_source_url,card_notes,benefit_name,benefit_normalized_name,benefit_cycle_type,benefit_unit,benefit_default_amount_total,benefit_default_deadline_rule,benefit_default_period_rule,benefit_active,benefit_notes
-amex-gold,Amex Gold,Amex Gold,Amex,325,active,2023-04-01,4,1,,,$120 Dining Credit,Dining Credit,monthly,usd_credit,10,,,TRUE,$10 monthly at Grubhub Buffalo Wild Wings Five Guys The Cheesecake Factory and Wonder
-amex-gold,Amex Gold,Amex Gold,Amex,325,active,2023-04-01,4,1,,,$120 Uber Cash,Uber Cash,monthly,usd_credit,10,,,TRUE,$10 monthly
-amex-gold,Amex Gold,Amex Gold,Amex,325,active,2023-04-01,4,1,,,$100 Resy Credit,Resy Credit,semiannual,usd_credit,50,,,TRUE,up to $50 Jan-Jun and $50 Jul-Dec
-amex-gold,Amex Gold,Amex Gold,Amex,325,active,2023-04-01,4,1,,,$84 Dunkin' Credit,Dunkin' Credit,monthly,usd_credit,7,,,TRUE,$7 monthly
+amex-gold,Amex Gold,Amex Gold,American Express,325,active,2023-04-01,4,1,,,$120 Dining Credit,Dining Credit,monthly,usd_credit,10,,,TRUE,$10 monthly at Grubhub Buffalo Wild Wings Five Guys The Cheesecake Factory and Wonder
+amex-gold,Amex Gold,Amex Gold,American Express,325,active,2023-04-01,4,1,,,$120 Uber Cash,Uber Cash,monthly,usd_credit,10,,,TRUE,$10 monthly
+amex-gold,Amex Gold,Amex Gold,American Express,325,active,2023-04-01,4,1,,,$100 Resy Credit,Resy Credit,semiannual,usd_credit,50,,,TRUE,up to $50 Jan-Jun and $50 Jul-Dec
+amex-gold,Amex Gold,Amex Gold,American Express,325,active,2023-04-01,4,1,,,$84 Dunkin' Credit,Dunkin' Credit,monthly,usd_credit,7,,,TRUE,$7 monthly

@@ -15,6 +15,7 @@ from app.schemas import (
     BenefitPeriodRead,
     PeriodStatus,
     PeriodUpdate,
+    QuickCompleteCreate,
     UsageAdjustmentCreate,
     UsageEventCreate,
     UsageEventListResponse,
@@ -180,3 +181,28 @@ def set_current_used_amount(
     except NotFoundError as error:
         session.rollback()
         raise http_not_found(error) from error
+
+
+@router.post(
+    "/benefit-periods/{period_id}/quick-complete",
+    response_model=UsageMutationResponse,
+)
+def quick_complete_endpoint(
+    period_id: int,
+    payload: QuickCompleteCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+) -> UsageMutationResponse:
+    try:
+        event = usage_service.quick_complete_period(session, period_id, payload, user_id=current_user.user_id)
+        commit_or_conflict(session)
+        return UsageMutationResponse(
+            usage_event=read_service.usage_event_to_read(event),
+            period=read_service.get_benefit_period(session, period_id, user_id=current_user.user_id),
+        )
+    except NotFoundError as error:
+        session.rollback()
+        raise http_not_found(error) from error
+    except ServiceValidationError as error:
+        session.rollback()
+        raise http_validation_error(error) from error

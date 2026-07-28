@@ -1,4 +1,4 @@
-"""Benefit-definition read endpoints."""
+"""Benefit-definition endpoints."""
 
 from __future__ import annotations
 

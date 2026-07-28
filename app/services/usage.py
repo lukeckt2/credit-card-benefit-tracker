@@ -8,7 +8,7 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.models import BenefitPeriod, UsageEvent
-from app.schemas import PeriodUpdate, UsageAdjustmentCreate, UsageEventCreate
+from app.schemas import PeriodUpdate, QuickCompleteCreate, UsageAdjustmentCreate, UsageEventCreate
 from app.services.errors import NotFoundError, ServiceValidationError
 from app.services.read import usage_total_for_period
 
@@ -129,6 +129,74 @@ def create_usage_adjustment(
         note=payload.note,
         used_at=payload.used_at or utc_now(),
         source_key=payload.source_key,
+    )
+    session.add(event)
+    session.flush()
+    sync_completion_from_usage_total(session, period)
+    session.flush()
+    return event
+
+
+from sqlalchemy import select as sa_select
+
+
+def _pre_completion_amount(session: Session, period: BenefitPeriod) -> Decimal:
+    """Return the used total just before the most recent auto-complete event.
+
+    Subtracts the most recent quick-complete event delta from
+    the current running total. Returns Decimal("0") as a fallback or if restoring
+    would result in a fully completed state.
+    """
+    recent_event = session.scalar(
+        sa_select(UsageEvent)
+        .where(
+            UsageEvent.benefit_period_id == period.benefit_period_id,
+            UsageEvent.event_type == "quick_complete",
+        )
+        .order_by(UsageEvent.used_at.desc(), UsageEvent.usage_event_id.desc())
+        .limit(1)
+    )
+    if recent_event is None:
+        return Decimal("0")
+
+    current_total = usage_total_for_period(session, period.benefit_period_id)
+    target = current_total - recent_event.amount_delta
+    
+    if target >= period.amount_total:
+        return Decimal("0")
+
+    return target
+
+
+def quick_complete_period(
+    session: Session, period_id: int, payload: QuickCompleteCreate, *, user_id: int
+) -> UsageEvent:
+    period = get_period_for_update(session, period_id, user_id=user_id)
+    current_used = usage_total_for_period(session, period_id)
+    
+    if payload.completed and period.amount_total is None:
+        raise ServiceValidationError("Cannot quick-complete a benefit without a total amount.")
+
+    if payload.completed:
+        target_used = Decimal(period.amount_total)
+    else:
+        target_used = _pre_completion_amount(session, period)
+        
+    delta = target_used - current_used
+    if delta == 0:
+        raise ServiceValidationError("No change needed.")
+
+    event = UsageEvent(
+        benefit_period_id=period_id,
+        event_type="quick_complete" if payload.completed else "adjustment",
+        amount_delta=delta,
+        note=payload.note or (
+            "Auto-completed via checkbox"
+            if payload.completed
+            else "Restored prior amount via checkbox"
+        ),
+        source_key=None,
+        used_at=utc_now(),
     )
     session.add(event)
     session.flush()
