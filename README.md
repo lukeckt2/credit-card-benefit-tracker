@@ -24,8 +24,14 @@ Database creation, user creation, and migration execution require explicit appro
 
 ```mermaid
 erDiagram
+    users {
+        int user_id PK
+        string username UK
+        string email UK
+    }
     card_master {
         int card_id PK
+        int user_id FK
         string slug UK
         string display_name
         string card_name
@@ -73,6 +79,7 @@ erDiagram
         datetime created_at
     }
     
+    users ||--o{ card_master : "owns"
     card_master ||--o{ benefit_definitions : "has"
     benefit_definitions ||--o{ benefit_periods : "has"
     benefit_periods ||--o{ usage_events : "has"
