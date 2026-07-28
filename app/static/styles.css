@@ -1044,3 +1044,23 @@ dialog.panel::backdrop {
   transition: width 0.3s ease;
 }
 
+/* Unsaved hint shown after slider is moved */
+.slider-unsaved-hint {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--orange);
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: opacity 0.25s ease, max-height 0.25s ease;
+  pointer-events: none;
+  margin-block-start: 0.15rem;
+  letter-spacing: 0.01em;
+}
+
+.slider-unsaved-hint.visible {
+  opacity: 1;
+  max-height: 2em;
+}
+

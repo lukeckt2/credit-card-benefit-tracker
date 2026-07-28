@@ -323,6 +323,7 @@ function benefitRow(row) {
     const percent = Math.min(100, Math.round((amountUsed / amountTotal) * 100));
     progressHtml = `
       <input type="range" class="progress-slider" min="0" max="${amountTotal}" step="1" value="${amountUsed}" style="--progress-percent: ${percent}%;" aria-label="Adjust used amount">
+      <span class="slider-unsaved-hint" aria-live="polite">⚠ Unsaved — click Save →</span>
     `;
   } else if (amountTotal === 0 && amountUsed > 0) {
     progressHtml = `
@@ -550,6 +551,7 @@ function cardPeriodRow(period, definition, cardId) {
     const percent = Math.min(100, Math.round((amountUsed / amountTotal) * 100));
     progressHtml = `
       <input type="range" class="progress-slider" min="0" max="${amountTotal}" step="1" value="${amountUsed}" style="--progress-percent: ${percent}%;" aria-label="Adjust used amount">
+      <span class="slider-unsaved-hint" aria-live="polite">⚠ Unsaved — click Save →</span>
     `;
   } else if (amountTotal === 0 && amountUsed > 0) {
     progressHtml = `
@@ -1108,16 +1110,9 @@ document.addEventListener("change", (event) => {
     }
   }
   
-  if (event.target.classList.contains("progress-slider")) {
-    const slider = event.target;
-    const row = slider.closest("tr");
-    if (row) {
-      const form = row.querySelector(".used-form");
-      if (form) {
-        saveUsedAmount(form);
-      }
-    }
-  }
+  // Slider changes are intentionally not auto-saved here.
+  // Moving the slider updates the text input (via the "input" event below);
+  // the user must click the Save button to persist the value.
 });
 
 document.addEventListener("input", (event) => {
@@ -1127,7 +1122,13 @@ document.addEventListener("input", (event) => {
     const value = Number(slider.value);
     const percent = max > 0 ? (value / max) * 100 : 0;
     slider.style.setProperty("--progress-percent", `${percent}%`);
-    
+
+    // Show the unsaved hint as soon as the slider is moved
+    const hint = slider.nextElementSibling;
+    if (hint && hint.classList.contains("slider-unsaved-hint")) {
+      hint.classList.add("visible");
+    }
+
     const row = slider.closest("tr");
     if (row) {
       const input = row.querySelector('input[name="current_used_amount"]');
