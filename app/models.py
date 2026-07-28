@@ -38,7 +38,7 @@ CYCLE_TYPES = (
 )
 UNITS = ("usd_credit", "miles", "cert", "spend_to_goal_usd")
 PERIOD_STATUSES = ("pending", "completed", "skipped", "expired")
-USAGE_EVENT_TYPES = ("import_initial", "usage", "adjustment", "correction")
+USAGE_EVENT_TYPES = ("import_initial", "usage", "adjustment", "quick_complete")
 
 MYSQL_TABLE_OPTIONS = {
     "mysql_charset": "utf8mb4",

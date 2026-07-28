@@ -147,7 +147,7 @@ def test_quick_complete_check_creates_adjustment_event(client):
     data = response.json()
     # delta = 20.00 - 5.00 = 15.00
     assert data["usage_event"]["amount_delta"] == 15.0
-    assert data["usage_event"]["event_type"] == "adjustment"
+    assert data["usage_event"]["event_type"] == "quick_complete"
 
     with SessionLocal() as session:
         event_count = session.scalar(
@@ -245,7 +245,7 @@ def test_quick_complete_roundtrip_check_then_uncheck(client):
     )
     assert r2.status_code == 200
     data = r2.json()
-    assert data["period"]["amount_used"] == 0.0
+    assert data["period"]["amount_used"] == 5.0
     assert data["period"]["status"] == "pending"
 
     with SessionLocal() as session:

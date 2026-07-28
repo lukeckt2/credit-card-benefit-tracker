@@ -299,18 +299,18 @@ def test_usage_events_and_adjustments_are_append_only(client):
 
     response = test_client.post(
         f"/api/benefit-periods/{period_id}/usage-adjustment",
-        json={"current_used_amount": "10.00", "event_type": "correction"},
+        json={"current_used_amount": "10.00", "event_type": "quick_complete"},
     )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["usage_event"]["event_type"] == "correction"
+    assert data["usage_event"]["event_type"] == "quick_complete"
     assert data["usage_event"]["amount_delta"] == 1.5
     assert data["period"]["amount_used"] == 10.0
 
     response = test_client.post(
         f"/api/benefit-periods/{period_id}/usage-events",
-        json={"amount_delta": "1.00", "event_type": "correction"},
+        json={"amount_delta": "1.00", "event_type": "quick_complete"},
     )
     assert response.status_code == 422
 
@@ -334,7 +334,7 @@ def test_usage_adjustment_syncs_completion_status_and_dashboard(client):
 
     response = test_client.post(
         f"/api/benefit-periods/{period_id}/usage-adjustment",
-        json={"current_used_amount": "20.00", "event_type": "correction"},
+        json={"current_used_amount": "20.00", "event_type": "quick_complete"},
     )
 
     assert response.status_code == 200
@@ -348,7 +348,7 @@ def test_usage_adjustment_syncs_completion_status_and_dashboard(client):
 
     response = test_client.post(
         f"/api/benefit-periods/{period_id}/usage-adjustment",
-        json={"current_used_amount": "10.00", "event_type": "correction"},
+        json={"current_used_amount": "10.00", "event_type": "quick_complete"},
     )
 
     assert response.status_code == 200
@@ -385,7 +385,7 @@ def test_complete_requires_no_remaining_and_reopen_preserves_usage(client):
 
     response = test_client.post(
         f"/api/benefit-periods/{period_id}/usage-adjustment",
-        json={"current_used_amount": "20.00", "event_type": "correction"},
+        json={"current_used_amount": "20.00", "event_type": "quick_complete"},
     )
     assert response.status_code == 200
     assert response.json()["period"]["status"] == "completed"
@@ -584,7 +584,7 @@ def test_quick_complete_checkbox_flow(client):
     data = response.json()
     assert data["period"]["status"] == "completed"
     assert data["usage_event"]["amount_delta"] == 15.00  # 20.00 total - 5.00 initial
-    assert data["usage_event"]["event_type"] == "adjustment"
+    assert data["usage_event"]["event_type"] == "quick_complete"
 
     # 2. Try to complete again (zero-delta no-op should raise validation error)
     response = test_client.post(
@@ -594,7 +594,7 @@ def test_quick_complete_checkbox_flow(client):
     assert response.status_code == 422
     assert "No change needed" in response.json()["detail"]
 
-    # 3. Uncheck/reset the benefit to 0
+    # 3. Uncheck/reset the benefit to prior amount
     response = test_client.post(
         f"/api/benefit-periods/{period_id}/quick-complete",
         json={"completed": False}
@@ -602,5 +602,5 @@ def test_quick_complete_checkbox_flow(client):
     assert response.status_code == 200
     data = response.json()
     assert data["period"]["status"] == "pending"
-    assert data["usage_event"]["amount_delta"] == -20.00  # Reset back to 0
+    assert data["usage_event"]["amount_delta"] == -15.00  # Restored to 5.0
     assert data["usage_event"]["event_type"] == "adjustment"
