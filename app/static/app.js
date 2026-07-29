@@ -388,7 +388,12 @@ async function loadDashboard(options) {
   replaceChildrenCompat(dueBody, emptyRow("Loading 45-day due benefits..."));
 
   try {
-    const data = await fetchJson("/api/dashboard");
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const asOf = `${yyyy}-${mm}-${dd}`;
+    const data = await fetchJson(`/api/dashboard?as_of=${asOf}`);
     asOfLabel.textContent = data.as_of || "-";
     renderTable(
       sectionByKey(data, "active_current"),
