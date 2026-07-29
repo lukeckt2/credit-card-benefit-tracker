@@ -4,13 +4,13 @@
 Use cases:
 
 - Preview a draft CSV without writing (against the dev database):
-  `MIGRATION_DATABASE=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/import_card_csv.py preview --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty --details`
+  `MIGRATION_DATABASE_HOST=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/import_card_csv.py preview --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty --details`
 
 - Apply after reviewing preview output (against the dev database):
-  `MIGRATION_DATABASE=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/import_card_csv.py apply --csv "new_card/Chase UA Business.csv" --user-id 1 --yes --pretty`
+  `MIGRATION_DATABASE_HOST=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/import_card_csv.py apply --csv "new_card/Chase UA Business.csv" --user-id 1 --yes --pretty`
 
 - Reconcile database state after apply (against the dev database):
-  `MIGRATION_DATABASE=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/import_card_csv.py reconcile --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty`
+  `MIGRATION_DATABASE_HOST=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/import_card_csv.py reconcile --csv "new_card/Chase UA Business.csv" --user-id 1 --pretty`
 
 - Generate current periods for a specific date:
   add `--as-of YYYY-MM-DD` to preview/apply/reconcile.
