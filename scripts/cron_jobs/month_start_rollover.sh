@@ -9,11 +9,7 @@ PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
 
 cd "${PROJECT_ROOT}"
 
-if [[ -f ".env" ]]; then
-  set -a
-  . ".env"
-  set +a
-fi
+
 
 ROLLOVER_MODE="${ROLLOVER_MODE:-apply}"
 ROLLOVER_MONTH="${ROLLOVER_MONTH:-$(date +%Y-%m)}"

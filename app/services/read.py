@@ -92,6 +92,7 @@ def definition_to_summary(definition: BenefitDefinition) -> BenefitDefinitionSum
         cycle_type=definition.cycle_type,
         unit=definition.unit,
         default_amount_total=decimal_to_api(definition.default_amount_total) or 0.0,
+        amount_overrides=definition.amount_overrides,
         active=definition.active,
     )
 

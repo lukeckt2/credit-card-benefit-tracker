@@ -4,10 +4,10 @@
 Manual commands, run from the project root:
 
 Preview a month without writing:
-    ROLLOVER_MODE=preview ROLLOVER_MONTH=2026-08 ROLLOVER_PRETTY=1 scripts/cron_jobs/month_start_rollover.sh
+    DATABASE_HOST=192.168.0.215 ROLLOVER_MODE=preview ROLLOVER_MONTH=2026-08 ROLLOVER_PRETTY=1 scripts/cron_jobs/month_start_rollover.sh
 
 Apply a month through the cron wrapper:
-    ROLLOVER_MONTH=2026-08 scripts/cron_jobs/month_start_rollover.sh
+    DATABASE_HOST=192.168.0.215 ROLLOVER_MONTH=2026-08 scripts/cron_jobs/month_start_rollover.sh
 
 Apply an explicit window through this Python entry point:
     scripts/cron_jobs/rollover.py apply --window-start 2026-08-01 --window-end 2026-08-31 --only-periods-starting-in-window --yes --pretty

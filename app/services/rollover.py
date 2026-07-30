@@ -290,6 +290,22 @@ def build_rollover_response(
         )
         for candidate in candidates:
             action = "exists" if candidate.period_key in existing_keys else "create"
+            amount_total = decimal_to_api(definition.default_amount_total) or 0.0
+            
+            if definition.amount_overrides:
+                override_key = None
+                if definition.cycle_type == "monthly":
+                    override_key = str(candidate.period_start.month)
+                elif definition.cycle_type == "quarterly":
+                    quarter = ((candidate.period_start.month - 1) // 3) + 1
+                    override_key = f"Q{quarter}"
+                elif definition.cycle_type == "semiannual":
+                    half = 1 if candidate.period_start.month <= 6 else 2
+                    override_key = f"H{half}"
+                
+                if override_key and override_key in definition.amount_overrides:
+                    amount_total = float(definition.amount_overrides[override_key])
+
             periods.append(
                 RolloverPeriod(
                     action=action,
@@ -302,7 +318,7 @@ def build_rollover_response(
                     period_start=candidate.period_start,
                     period_end=candidate.period_end,
                     deadline=candidate.deadline,
-                    amount_total=decimal_to_api(definition.default_amount_total) or 0.0,
+                    amount_total=amount_total,
                 )
             )
 

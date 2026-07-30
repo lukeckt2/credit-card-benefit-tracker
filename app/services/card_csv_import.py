@@ -7,6 +7,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal, InvalidOperation
+import json
 from pathlib import Path
 import re
 from typing import Any
@@ -45,6 +46,7 @@ CSV_COLUMNS = (
     "benefit_cycle_type",
     "benefit_unit",
     "benefit_default_amount_total",
+    "benefit_amount_overrides",
     "benefit_default_deadline_rule",
     "benefit_default_period_rule",
     "benefit_active",
@@ -148,6 +150,7 @@ class DefinitionPlan:
     cycle_type: str
     unit: str | None
     default_amount_total: Decimal
+    amount_overrides: dict[str, float] | None
     default_deadline_rule: str | None
     default_period_rule: str | None
     active: bool
@@ -167,6 +170,7 @@ class DefinitionPlan:
             "cycle_type": self.cycle_type,
             "unit": self.unit,
             "default_amount_total": decimal_to_json(self.default_amount_total),
+            "amount_overrides": self.amount_overrides,
             "default_deadline_rule": self.default_deadline_rule,
             "default_period_rule": self.default_period_rule,
             "active": self.active,
@@ -687,6 +691,31 @@ def parse_definition(
             ),
         )
 
+    amount_overrides = None
+    raw_overrides = normalize_optional(row.get("benefit_amount_overrides"))
+    if raw_overrides:
+        try:
+            parsed = json.loads(raw_overrides)
+            amount_overrides = {}
+            for k, v in parsed.items():
+                k_str = str(k).strip()
+                if k_str.isdigit():
+                    k_str = str(int(k_str))
+                else:
+                    k_str = k_str.upper()
+                amount_overrides[k_str] = float(v)
+        except Exception:
+            add_warning(
+                plan,
+                WarningItem(
+                    "invalid_amount_overrides",
+                    "Benefit amount overrides must be valid JSON.",
+                    row=row_number,
+                    column="benefit_amount_overrides",
+                )
+            )
+            return None
+
     return DefinitionPlan(
         card_slug=card.slug,
         name=name,
@@ -694,6 +723,7 @@ def parse_definition(
         cycle_type=cycle_type,
         unit=unit,
         default_amount_total=amount_total,
+        amount_overrides=amount_overrides,
         default_deadline_rule=None,
         default_period_rule=None,
         active=active,
@@ -776,6 +806,7 @@ def definition_matches(existing: BenefitDefinition, planned: DefinitionPlan) -> 
             existing.cycle_type == planned.cycle_type,
             existing.unit == planned.unit,
             decimal_equal(existing.default_amount_total, planned.default_amount_total),
+            existing.amount_overrides == planned.amount_overrides,
             existing.default_deadline_rule == planned.default_deadline_rule,
             existing.default_period_rule == planned.default_period_rule,
             bool(existing.active) == planned.active,
@@ -1045,6 +1076,7 @@ def set_definition_fields(definition: BenefitDefinition, plan: DefinitionPlan) -
     definition.cycle_type = plan.cycle_type
     definition.unit = plan.unit
     definition.default_amount_total = plan.default_amount_total
+    definition.amount_overrides = plan.amount_overrides
     definition.default_deadline_rule = plan.default_deadline_rule
     definition.default_period_rule = plan.default_period_rule
     definition.active = plan.active

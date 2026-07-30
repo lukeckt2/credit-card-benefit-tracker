@@ -272,3 +272,25 @@ def test_missing_open_month_day_warns_but_imports_definition(tmp_path, db_sessio
     assert count_rows(db_session, CardMaster) == 1
     assert count_rows(db_session, BenefitDefinition) == 1
     assert count_rows(db_session, BenefitPeriod) == 0
+
+
+def test_amount_overrides_csv_import(tmp_path, db_session):
+    csv_path = write_csv(
+        tmp_path,
+        [
+            card_row(
+                benefit_name="Uber Cash",
+                benefit_normalized_name="uber cash",
+                benefit_cycle_type="monthly",
+                benefit_unit="usd_credit",
+                benefit_default_amount_total="15.00",
+                benefit_amount_overrides='{"12": 35.0}',
+            )
+        ],
+    )
+
+    result = apply_plan(build_plan(csv_path, as_of=date(2026, 7, 20)), db_session, user_id=1)
+    assert result["applied"] is True
+
+    definition = db_session.scalar(select(BenefitDefinition).where(BenefitDefinition.normalized_name == "uber cash"))
+    assert definition.amount_overrides == {"12": 35.0}

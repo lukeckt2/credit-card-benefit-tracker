@@ -14,6 +14,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     MetaData,
     Numeric,
     SmallInteger,
@@ -174,6 +175,7 @@ class BenefitDefinition(TimestampMixin, Base):
     cycle_type: Mapped[str] = mapped_column(String(32), nullable=False)
     unit: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     default_amount_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    amount_overrides: Mapped[Optional[dict[str, float]]] = mapped_column(JSON, nullable=True)
     default_deadline_rule: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     default_period_rule: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     active: Mapped[bool] = mapped_column(

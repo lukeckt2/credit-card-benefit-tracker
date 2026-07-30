@@ -64,6 +64,7 @@ class BenefitDefinitionSummary(BaseModel):
     cycle_type: CycleType
     unit: str | None
     default_amount_total: float
+    amount_overrides: dict[str, float] | None = None
     active: bool
 
 
@@ -82,10 +83,11 @@ class BenefitDefinitionListResponse(BaseModel):
 
 class BenefitDefinitionUpdate(StrictBaseModel):
     active: bool | None = None
+    amount_overrides: dict[str, float] | None = None
 
     @model_validator(mode="after")
     def require_update(self) -> "BenefitDefinitionUpdate":
-        if all(value is None for value in self.model_dump().values()):
+        if not self.model_fields_set:
             raise ValueError("At least one field must be provided.")
         return self
 

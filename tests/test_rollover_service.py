@@ -218,3 +218,95 @@ def test_cli_month_window_handles_leap_year():
     )
     with pytest.raises(argparse.ArgumentTypeError):
         module.parse_month_window("2028-13")
+
+
+def test_amount_overrides(db_session):
+    def1 = add_definition(
+        db_session, slug="monthly-override", name="Monthly", cycle_type="monthly"
+    )
+    def1.amount_overrides = {"12": 35.0}
+    db_session.flush()
+
+    res = preview_rollover(
+        db_session,
+        RolloverRequest(window_start=date(2026, 1, 1), window_end=date(2026, 12, 31)),
+        user_id=1,
+    )
+    for p in res.periods:
+        if p.period_start.month == 12:
+            assert p.amount_total == 35.0
+        else:
+            assert p.amount_total == 10.0
+
+    # Quarterly override
+    def2 = add_definition(
+        db_session, slug="quarterly-override", name="Quarterly", cycle_type="quarterly"
+    )
+    def2.amount_overrides = {"Q4": 100.0}
+    db_session.flush()
+    res2 = preview_rollover(
+        db_session,
+        RolloverRequest(
+            window_start=date(2026, 1, 1), window_end=date(2026, 12, 31), definition_ids=[def2.benefit_definition_id]
+        ),
+        user_id=1,
+    )
+    for p in res2.periods:
+        if p.period_key.endswith("Q4"):
+            assert p.amount_total == 100.0
+        else:
+            assert p.amount_total == 10.0
+
+    # Semiannual override
+    def3 = add_definition(
+        db_session, slug="semiannual-override", name="Semiannual", cycle_type="semiannual"
+    )
+    def3.amount_overrides = {"H2": 50.0}
+    db_session.flush()
+    res3 = preview_rollover(
+        db_session,
+        RolloverRequest(
+            window_start=date(2026, 1, 1), window_end=date(2026, 12, 31), definition_ids=[def3.benefit_definition_id]
+        ),
+        user_id=1,
+    )
+    for p in res3.periods:
+        if p.period_key.endswith("H2"):
+            assert p.amount_total == 50.0
+        else:
+            assert p.amount_total == 10.0
+
+    # No matching key (months other than June still use default)
+    def4 = add_definition(
+        db_session, slug="monthly-no-match", name="Monthly No Match", cycle_type="monthly"
+    )
+    def4.amount_overrides = {"6": 20.0}
+    db_session.flush()
+    res4 = preview_rollover(
+        db_session,
+        RolloverRequest(
+            window_start=date(2026, 1, 1), window_end=date(2026, 12, 31), definition_ids=[def4.benefit_definition_id]
+        ),
+        user_id=1,
+    )
+    for p in res4.periods:
+        if p.period_start.month == 6:
+            assert p.amount_total == 20.0
+        else:
+            assert p.amount_total == 10.0
+
+    # Unsupported cycle type
+    def5 = add_definition(
+        db_session, slug="annual-override", name="Annual", cycle_type="annual"
+    )
+    def5.amount_overrides = {"2025": 99.0}
+    db_session.flush()
+    res5 = preview_rollover(
+        db_session,
+        RolloverRequest(
+            window_start=date(2025, 1, 1), window_end=date(2026, 12, 31), definition_ids=[def5.benefit_definition_id]
+        ),
+        user_id=1,
+    )
+    for p in res5.periods:
+        assert p.amount_total == 10.0

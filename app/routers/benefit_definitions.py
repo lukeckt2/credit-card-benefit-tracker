@@ -71,8 +71,11 @@ def update_benefit_definition(
         
     definition, card = row
     
-    if update_data.active is not None:
-        definition.active = update_data.active
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if "active" in update_dict:
+        definition.active = update_dict["active"]
+    if "amount_overrides" in update_dict:
+        definition.amount_overrides = update_dict["amount_overrides"]
         
     commit_or_conflict(session)
     return read_service.definition_to_read(definition, card)

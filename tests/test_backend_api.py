@@ -604,3 +604,24 @@ def test_quick_complete_checkbox_flow(client):
     assert data["period"]["status"] == "pending"
     assert data["usage_event"]["amount_delta"] == -15.00  # Restored to 5.0
     assert data["usage_event"]["event_type"] == "adjustment"
+
+
+def test_patch_benefit_definition_amount_overrides(client):
+    test_client, ids, TestingSessionLocal = client
+    def_id = ids["definition_id"]
+
+    # 1. Update with a valid dict
+    response = test_client.patch(
+        f"/api/benefit-definitions/{def_id}",
+        json={"amount_overrides": {"12": 35.0}}
+    )
+    assert response.status_code == 200
+    assert response.json()["amount_overrides"] == {"12": 35.0}
+
+    # 2. Update with null to clear
+    response = test_client.patch(
+        f"/api/benefit-definitions/{def_id}",
+        json={"amount_overrides": None}
+    )
+    assert response.status_code == 200
+    assert response.json()["amount_overrides"] is None
