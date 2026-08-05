@@ -21,7 +21,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import admin, auth, benefit_definitions, benefit_periods, cards, dashboard
+from app.routers import admin, auth, benefit_definitions, benefit_periods, cards, catalog, dashboard
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -51,3 +51,4 @@ app.include_router(cards.router, prefix="/api")
 app.include_router(benefit_definitions.router, prefix="/api")
 app.include_router(benefit_periods.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
+app.include_router(catalog.router, prefix="/api")

@@ -77,6 +77,7 @@ def card_to_read(card: CardMaster) -> CardRead:
         open_month=card.open_month,
         open_day=card.open_day,
         source_url=card.source_url,
+        image_url=card.card_source_config.image_url if card.card_source_config else None,
         notes=card.notes,
         created_at=card.created_at,
         updated_at=card.updated_at,

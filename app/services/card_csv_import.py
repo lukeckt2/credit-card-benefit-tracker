@@ -9,9 +9,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
-import re
 from typing import Any
-import unicodedata
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -27,6 +25,7 @@ from app.models import (
 )
 from app.schemas import RolloverRequest
 from app.services.rollover import generate_candidate_periods, apply_rollover
+from app.utils.text import normalize_name
 
 
 CSV_COLUMNS = (
@@ -235,12 +234,6 @@ def normalize_token(value: str | None) -> str | None:
     if normalized is None:
         return None
     return normalized.lower().replace("-", "_")
-
-
-def normalize_name(value: str) -> str:
-    normalized = unicodedata.normalize("NFKC", value).strip().lower()
-    normalized = re.sub(r"\s+", " ", normalized)
-    return normalized[:255]
 
 
 def parse_decimal(raw: str | None) -> Decimal | None:

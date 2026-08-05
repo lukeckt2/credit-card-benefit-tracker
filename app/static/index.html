@@ -33,7 +33,8 @@
         </div>
         <div class="hero-actions-row">
           <button id="upload-csv-btn" type="button">Upload CSV</button>
-          <input type="file" id="csv-upload-input" accept=".csv" style="display: none;" />
+        <button id="add-card-btn" type="button">+ Add Card</button>
+        <input type="file" id="csv-upload-input" accept=".csv" style="display: none;" />
           <div class="as-of">As of <strong id="as-of">-</strong></div>
           <div id="user-info" class="user-info" hidden>
             <span id="username" class="username"></span>
@@ -134,6 +135,42 @@
       <button id="confirm-import-btn" type="button">Confirm Import</button>
     </div>
   </dialog>
+
+  <dialog id="add-card-modal" class="panel">
+    <div class="panel-header">
+      <h2>Add Card from Catalog</h2>
+    </div>
+    <div id="add-card-content" style="margin-block-end: 1.5rem;">
+      <div style="display: flex; flex-direction: column; gap: 1rem;">
+        <label>
+          <span class="eyebrow" style="display: block; margin-block-end: 0.25rem;">Issuer</span>
+          <select id="catalog-issuer-select" style="width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--line); background: var(--panel-bg); color: var(--text); font-size: 0.95rem;">
+            <option value="">Select an issuer...</option>
+          </select>
+        </label>
+        <label>
+          <span class="eyebrow" style="display: block; margin-block-end: 0.25rem;">Card</span>
+          <select id="catalog-card-select" disabled style="width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--line); background: var(--panel-bg); color: var(--text); font-size: 0.95rem;">
+            <option value="">Select a card...</option>
+          </select>
+        </label>
+        <div id="catalog-benefit-preview" style="display: none;">
+          <span class="eyebrow" style="display: block; margin-block-end: 0.25rem;">Benefits included</span>
+          <ul id="catalog-benefit-list" style="padding-inline-start: 1.5rem; font-size: 0.9rem; margin: 0;"></ul>
+        </div>
+        <label>
+          <span class="eyebrow" style="display: block; margin-block-end: 0.25rem;">Account Opening Date <span class="muted">(optional)</span></span>
+          <input type="date" id="catalog-open-date" style="width: 100%; padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--line); background: var(--panel-bg); color: var(--text); font-size: 0.95rem;" />
+        </label>
+      </div>
+    </div>
+    <div id="add-card-error" style="color: var(--error); margin-block-end: 1rem; display: none;"></div>
+    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+      <button id="cancel-add-card-btn" type="button" style="background: transparent; border: 1px solid var(--line-strong); color: var(--text);">Cancel</button>
+      <button id="confirm-add-card-btn" type="button" disabled>Add to My Wallet</button>
+    </div>
+  </dialog>
+
   <script src="/static/app.js?v=20260725-1" onerror="this.onerror=null;this.src='app.js?v=20260725-1'"></script>
 </body>
 

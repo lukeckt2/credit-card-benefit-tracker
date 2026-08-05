@@ -37,7 +37,7 @@ CYCLE_TYPES = (
     "cert",
     "multi_year",
 )
-UNITS = ("usd_credit", "miles", "cert", "spend_to_goal_usd")
+UNITS = ("usd_credit", "miles", "cert", "spend_to_goal_usd", "event")
 PERIOD_STATUSES = ("pending", "completed", "skipped", "expired")
 USAGE_EVENT_TYPES = ("import_initial", "usage", "adjustment", "quick_complete")
 
@@ -98,6 +98,74 @@ class User(TimestampMixin, Base):
     cards: Mapped[List["CardMaster"]] = relationship(back_populates="user")
 
 
+class CardSourceConfig(TimestampMixin, Base):
+    """Global card template — not user-specific."""
+
+    __tablename__ = "card_source_config"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_card_source_config_slug"),
+        MYSQL_TABLE_OPTIONS,
+    )
+
+    source_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(128), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    card_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    issuer: Mapped[str] = mapped_column(String(128), nullable=False)
+    annual_fee: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
+    source_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+    image_url: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
+
+    benefit_source_configs: Mapped[List["BenefitSourceConfig"]] = relationship(
+        back_populates="card_source_config"
+    )
+    cards: Mapped[List["CardMaster"]] = relationship(back_populates="card_source_config")
+
+
+class BenefitSourceConfig(TimestampMixin, Base):
+    """Global benefit template — not user-specific."""
+
+    __tablename__ = "benefit_source_config"
+    __table_args__ = (
+        UniqueConstraint(
+            "source_id", "normalized_name",
+            name="uq_benefit_source_config_source_name",
+        ),
+        CheckConstraint(
+            f"cycle_type in ({_sql_values(CYCLE_TYPES)})",
+            name="cycle_type",
+        ),
+        CheckConstraint(
+            f"unit is null or unit in ({_sql_values(UNITS)})",
+            name="unit",
+        ),
+        CheckConstraint(
+            "default_amount_total >= 0",
+            name="default_amount_total_nonnegative",
+        ),
+        Index("ix_benefit_source_config_source_id", "source_id"),
+        MYSQL_TABLE_OPTIONS,
+    )
+
+    benefit_source_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    source_id: Mapped[int] = mapped_column(
+        ForeignKey("card_source_config.source_id", ondelete="RESTRICT"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    normalized_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    cycle_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    unit: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    default_amount_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    amount_overrides: Mapped[Optional[dict[str, float]]] = mapped_column(JSON, nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    card_source_config: Mapped["CardSourceConfig"] = relationship(
+        back_populates="benefit_source_configs"
+    )
+
+
 class CardMaster(TimestampMixin, Base):
     __tablename__ = "card_master"
     __table_args__ = (
@@ -122,6 +190,9 @@ class CardMaster(TimestampMixin, Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.user_id", ondelete="RESTRICT"), nullable=False
     )
+    source_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("card_source_config.source_id", ondelete="SET NULL"), nullable=True
+    )
     slug: Mapped[str] = mapped_column(String(128), nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     card_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -137,6 +208,9 @@ class CardMaster(TimestampMixin, Base):
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="cards")
+    card_source_config: Mapped[Optional["CardSourceConfig"]] = relationship(
+        back_populates="cards"
+    )
     benefit_definitions: Mapped[List["BenefitDefinition"]] = relationship(
         back_populates="card"
     )

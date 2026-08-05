@@ -33,6 +33,7 @@ const unitLabels = {
   spend_to_goal_usd: "Spend",
   miles: "Miles",
   cert: "Cert",
+  event: "Event",
 };
 
 const cycleOrder = [
@@ -139,6 +140,7 @@ function formatAmount(value, unit) {
   if (unit === "spend_to_goal_usd") return currencyFormatter.format(number);
   if (unit === "miles") return integerFormatter.format(number);
   if (unit === "cert") return numberFormatter.format(number);
+  if (unit === "event") return numberFormatter.format(number) + " times";
   return numberFormatter.format(number);
 }
 
@@ -605,6 +607,7 @@ function renderBenefitCard(definition, cardId) {
     <div class="benefit-heading">
       <div>
         <h4>${escapeHtml(definition.name)}</h4>
+        ${definition.notes ? `<p class="muted benefit-notes" style="margin-top: 0.25rem; margin-bottom: 0.5rem; font-size: 0.85rem;">${escapeHtml(definition.notes)}</p>` : ''}
         <p class="muted">${escapeHtml(periods.length)} period${periods.length === 1 ? "" : "s"}</p>
       </div>
       <select class="benefit-status-select ${definition.active ? "active" : "inactive"}" data-definition-id="${escapeHtml(definition.benefit_definition_id)}" aria-label="Toggle active status for ${escapeHtml(definition.name)}">
@@ -678,10 +681,13 @@ function renderCardDetail(card, highlightPeriodId) {
 
   cardDetail.innerHTML = `
     <div class="card-summary-header">
-      <div>
-        <p class="eyebrow">${escapeHtml(card.issuer || "Credit Card")}</p>
-        <h2>${escapeHtml(cardDisplayName(card))}</h2>
-        <p class="muted">${escapeHtml(card.card_name || cardDisplayName(card))}</p>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        ${card.image_url ? `<img src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" style="max-width: 120px; max-height: 80px; border-radius: 6px; object-fit: contain;">` : ''}
+        <div>
+          <p class="eyebrow">${escapeHtml(card.issuer || "Credit Card")}</p>
+          <h2>${escapeHtml(cardDisplayName(card))}</h2>
+          <p class="muted">${escapeHtml(card.card_name || cardDisplayName(card))}</p>
+        </div>
       </div>
       <div class="card-actions">
         ${cardSourceLink(card)}
@@ -1066,6 +1072,174 @@ if (uploadCsvBtn && csvUploadInput) {
           confirmImportBtn.disabled = false;
           confirmImportBtn.textContent = "Confirm Import";
       }
+  });
+}
+
+// ── Add Card from Catalog ──────────────────────────────────────────
+const addCardBtn = document.querySelector("#add-card-btn");
+const addCardModal = document.querySelector("#add-card-modal");
+const catalogIssuerSelect = document.querySelector("#catalog-issuer-select");
+const catalogCardSelect = document.querySelector("#catalog-card-select");
+const catalogBenefitPreview = document.querySelector("#catalog-benefit-preview");
+const catalogBenefitList = document.querySelector("#catalog-benefit-list");
+const catalogOpenDate = document.querySelector("#catalog-open-date");
+const confirmAddCardBtn = document.querySelector("#confirm-add-card-btn");
+const cancelAddCardBtn = document.querySelector("#cancel-add-card-btn");
+const addCardError = document.querySelector("#add-card-error");
+
+let selectedSourceId = null;
+
+function resetAddCardModal() {
+  catalogIssuerSelect.value = "";
+  catalogCardSelect.innerHTML = '<option value="">Select a card...</option>';
+  catalogCardSelect.disabled = true;
+  catalogBenefitPreview.style.display = "none";
+  catalogBenefitList.innerHTML = "";
+  catalogOpenDate.value = "";
+  confirmAddCardBtn.disabled = true;
+  addCardError.style.display = "none";
+  addCardError.textContent = "";
+  selectedSourceId = null;
+}
+
+if (addCardBtn && addCardModal) {
+  addCardBtn.addEventListener("click", async () => {
+    resetAddCardModal();
+    addCardModal.showModal();
+    try {
+      const data = await fetchJson("/api/catalog/issuers");
+      catalogIssuerSelect.innerHTML = '<option value="">Select an issuer...</option>';
+      for (const issuer of data.issuers) {
+        const opt = document.createElement("option");
+        opt.value = issuer;
+        opt.textContent = issuer;
+        catalogIssuerSelect.appendChild(opt);
+      }
+    } catch (err) {
+      addCardError.textContent = "Failed to load issuers.";
+      addCardError.style.display = "block";
+    }
+  });
+
+  catalogIssuerSelect.addEventListener("change", async () => {
+    const issuer = catalogIssuerSelect.value;
+    catalogCardSelect.innerHTML = '<option value="">Select a card...</option>';
+    catalogBenefitPreview.style.display = "none";
+    confirmAddCardBtn.disabled = true;
+    selectedSourceId = null;
+    if (!issuer) {
+      catalogCardSelect.disabled = true;
+      return;
+    }
+    try {
+      const data = await fetchJson(
+        `/api/catalog/cards?issuer=${encodeURIComponent(issuer)}`
+      );
+      for (const card of data.cards) {
+        const opt = document.createElement("option");
+        opt.value = card.source_id;
+        opt.textContent = `${card.display_name} (Fee: ${card.annual_fee != null ? "$" + card.annual_fee : "N/A"})`;
+        catalogCardSelect.appendChild(opt);
+      }
+      catalogCardSelect.disabled = false;
+    } catch (err) {
+      addCardError.textContent = "Failed to load cards.";
+      addCardError.style.display = "block";
+    }
+  });
+
+  catalogCardSelect.addEventListener("change", async () => {
+    const sourceId = catalogCardSelect.value;
+    catalogBenefitPreview.style.display = "none";
+    catalogBenefitList.innerHTML = "";
+    confirmAddCardBtn.disabled = true;
+    selectedSourceId = null;
+    if (!sourceId) return;
+    try {
+      const data = await fetchJson(`/api/catalog/cards/${encodeURIComponent(sourceId)}`);
+      selectedSourceId = data.source_id;
+      if (data.benefit_source_configs && data.benefit_source_configs.length > 0) {
+        catalogBenefitPreview.style.display = "block";
+        for (const b of data.benefit_source_configs) {
+          const li = document.createElement("li");
+          const unitLabel = unitLabels[b.unit] || b.unit || "";
+          const amount = b.unit === "usd_credit"
+            ? currencyFormatter.format(b.default_amount_total)
+            : numberFormatter.format(b.default_amount_total) + (unitLabel ? " " + unitLabel : "");
+          li.textContent = `${b.name} — ${amount} (${cycleLabels[b.cycle_type] || b.cycle_type})`;
+          catalogBenefitList.appendChild(li);
+        }
+      }
+      confirmAddCardBtn.disabled = false;
+    } catch (err) {
+      addCardError.textContent = "Failed to load card details.";
+      addCardError.style.display = "block";
+    }
+  });
+
+  confirmAddCardBtn.addEventListener("click", async () => {
+    if (!selectedSourceId) return;
+    addCardError.style.display = "none";
+    confirmAddCardBtn.disabled = true;
+    confirmAddCardBtn.textContent = "Adding...";
+    const openDate = catalogOpenDate.value || null;
+    try {
+      const response = await fetch("/api/catalog/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source_id: selectedSourceId,
+          open_date: openDate,
+          force: false,
+        }),
+      });
+      if (response.status === 409) {
+        const errData = await response.json();
+        const msg = errData.detail?.message || "This card already exists in your wallet.";
+        if (confirm(`${msg}\n\nAdd a duplicate copy?`)) {
+          const forceResp = await fetch("/api/catalog/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              source_id: selectedSourceId,
+              open_date: openDate,
+              force: true,
+            }),
+          });
+          if (!forceResp.ok) throw new Error("Failed to add duplicate card.");
+          const result = await forceResp.json();
+          addCardModal.close();
+          showNotice(result.message);
+          await Promise.all([loadDashboard(), loadCards()]);
+          window.location.hash = `#card-${result.card_id}`;
+          await handleRoute();
+          return;
+        }
+        confirmAddCardBtn.disabled = false;
+        confirmAddCardBtn.textContent = "Add to My Wallet";
+        return;
+      }
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail?.message || errData.detail || "Failed to add card.");
+      }
+      const result = await response.json();
+      addCardModal.close();
+      showNotice(result.message);
+      await Promise.all([loadDashboard(), loadCards()]);
+      window.location.hash = `#card-${result.card_id}`;
+      await handleRoute();
+    } catch (err) {
+      addCardError.textContent = err.message;
+      addCardError.style.display = "block";
+      confirmAddCardBtn.disabled = false;
+      confirmAddCardBtn.textContent = "Add to My Wallet";
+    }
+  });
+
+  cancelAddCardBtn.addEventListener("click", () => {
+    addCardModal.close();
+    resetAddCardModal();
   });
 }
 

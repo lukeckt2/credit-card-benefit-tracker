@@ -37,6 +37,7 @@ class StrictBaseModel(BaseModel):
 
 class CardRead(BaseModel):
     card_id: int
+    source_id: int | None = None
     slug: str
     display_name: str
     card_name: str
@@ -47,6 +48,7 @@ class CardRead(BaseModel):
     open_month: int | None
     open_day: int | None
     source_url: str | None
+    image_url: str | None = None
     notes: str | None
     created_at: datetime
     updated_at: datetime
@@ -269,3 +271,52 @@ class RolloverResponse(BaseModel):
     not_due: int
     warnings: list[RolloverWarning]
     periods: list[RolloverPeriod]
+
+
+# --- Catalog schemas (global templates) ---
+
+class BenefitSourceConfigRead(BaseModel):
+    benefit_source_id: int
+    source_id: int
+    name: str
+    normalized_name: str
+    cycle_type: CycleType
+    unit: str | None
+    default_amount_total: float
+    amount_overrides: dict[str, float] | None = None
+
+
+class CardSourceConfigRead(BaseModel):
+    source_id: int
+    slug: str
+    display_name: str
+    card_name: str
+    issuer: str
+    annual_fee: float | None
+    source_url: str | None
+    image_url: str | None
+
+
+class CardSourceConfigDetail(CardSourceConfigRead):
+    benefit_source_configs: list[BenefitSourceConfigRead]
+
+
+class CatalogIssuerListResponse(BaseModel):
+    issuers: list[str]
+
+
+class CatalogCardListResponse(BaseModel):
+    cards: list[CardSourceConfigRead]
+
+
+class CatalogAddRequest(StrictBaseModel):
+    source_id: int
+    open_date: date | None = None
+    force: bool = False
+
+
+class CatalogAddResponse(BaseModel):
+    card_id: int
+    slug: str
+    display_name: str
+    message: str

@@ -4,7 +4,7 @@
 Use cases:
 
 - Delete a card by ID:
-  `MIGRATION_DATABASE=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/delete_card.py --card-id 123 --user-id 1 --yes`
+  `MIGRATION_DATABASE_HOST=192.168.0.xxx APP_ENV=dev .venv/bin/python scripts/delete_card.py --card-id 123 --user-id 1 --yes`
 
 Behavior:
 
