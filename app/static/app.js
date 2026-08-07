@@ -634,7 +634,6 @@ function renderBenefitCard(definition, cardId) {
       <div>
         <h4>${escapeHtml(definition.name)}</h4>
         ${definition.notes ? `<p class="muted benefit-notes" style="margin-top: 0.25rem; margin-bottom: 0.5rem; font-size: 0.85rem;">${escapeHtml(definition.notes)}</p>` : ''}
-        <p class="muted">${escapeHtml(periods.length)} period${periods.length === 1 ? "" : "s"}</p>
       </div>
       <select class="benefit-status-select ${definition.active ? "active" : "inactive"}" data-definition-id="${escapeHtml(definition.benefit_definition_id)}" aria-label="Toggle active status for ${escapeHtml(definition.name)}">
         <option value="true" ${definition.active ? "selected" : ""}>Active</option>
