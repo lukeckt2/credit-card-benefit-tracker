@@ -924,23 +924,100 @@ dialog.panel::backdrop {
   }
 }
 
-/* Fix mobile issuer tabs */
-@media (max-width: 760px) {
-  .issuer-group {
-    min-inline-size: min(17rem, 85vw);
+/* Comprehensive Mobile Responsiveness */
+@media (max-width: 768px) {
+  /* Adjust shell and panels for better screen usage */
+  .shell {
+    padding-block: 1rem 2rem;
+    width: 100%;
+  }
+  
+  .hero {
+    padding: 1.5rem 1rem;
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .hero {
-    padding: 1.5rem;
+  .hero-actions {
+    width: 100%;
+    align-items: flex-start;
+  }
+  
+  .hero-actions-row {
+    width: 100%;
+    justify-content: space-between;
+  }
 
-    & h1 {
-      font-size: 2.2rem;
-    }
+  /* Issuer group responsive adjust */
+  .issuer-group {
+    min-inline-size: min(17rem, 85vw);
   }
 
   .card-detail-panel,
   .table-panel {
     padding: 1rem;
+  }
+
+  .hero h1 {
+    font-size: 2.2rem;
+  }
+
+  /* Convert tables to card layout on mobile */
+  .benefit-table, 
+  .benefit-table thead, 
+  .benefit-table tbody, 
+  .benefit-table th, 
+  .benefit-table td, 
+  .benefit-table tr { 
+    display: block; 
+  }
+  
+  .benefit-table thead tr { 
+    position: absolute;
+    top: -9999px;
+    left: -9999px;
+  }
+  
+  .benefit-table tr {
+    border: 1px solid var(--line-strong);
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+    background: var(--card-bg-40);
+    padding: 0.5rem;
+  }
+  
+  .benefit-table td { 
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    border: none;
+    border-bottom: 1px solid var(--line); 
+    padding: 0.75rem; 
+    text-align: left;
+  }
+
+  .benefit-table td.numeric {
+    text-align: left;
+  }
+
+  .benefit-table td:last-child {
+    border-bottom: none;
+  }
+  
+  .benefit-table td::before { 
+    content: attr(data-label);
+    display: block;
+    font-weight: 700;
+    color: var(--text-th);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .used-form {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 
