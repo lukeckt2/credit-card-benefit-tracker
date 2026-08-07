@@ -32,9 +32,7 @@
           <button id="refresh" type="button">Refresh</button>
         </div>
         <div class="hero-actions-row">
-          <button id="upload-csv-btn" type="button">Upload CSV</button>
         <button id="add-card-btn" type="button">+ Add Card</button>
-        <input type="file" id="csv-upload-input" accept=".csv" style="display: none;" />
           <div class="as-of">As of <strong id="as-of">-</strong></div>
           <div id="user-info" class="user-info" hidden>
             <span id="username" class="username"></span>
@@ -123,18 +121,6 @@
     </section>
   </main>
 
-  <dialog id="preview-modal" class="panel">
-    <div class="panel-header">
-      <h2>Preview Import</h2>
-    </div>
-    <div id="preview-content" style="margin-block-end: 2rem; max-height: 50vh; overflow-y: auto;">
-      <p>Loading preview...</p>
-    </div>
-    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-      <button id="cancel-import-btn" type="button" style="background: transparent; border: 1px solid var(--line-strong); color: var(--text);">Cancel</button>
-      <button id="confirm-import-btn" type="button">Confirm Import</button>
-    </div>
-  </dialog>
 
   <dialog id="add-card-modal" class="panel">
     <div class="panel-header">

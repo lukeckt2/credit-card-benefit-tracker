@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models import (
+    BENEFIT_CATEGORIES,
     CARD_STATUSES,
     CYCLE_TYPES,
     UNITS,
@@ -42,6 +43,7 @@ CSV_COLUMNS = (
     "card_notes",
     "benefit_name",
     "benefit_normalized_name",
+    "benefit_category",
     "benefit_cycle_type",
     "benefit_unit",
     "benefit_default_amount_total",
@@ -146,6 +148,7 @@ class DefinitionPlan:
     card_slug: str
     name: str
     normalized_name: str
+    category: str | None
     cycle_type: str
     unit: str | None
     default_amount_total: Decimal
@@ -166,6 +169,7 @@ class DefinitionPlan:
             "card_slug": self.card_slug,
             "name": self.name,
             "normalized_name": self.normalized_name,
+            "category": self.category,
             "cycle_type": self.cycle_type,
             "unit": self.unit,
             "default_amount_total": decimal_to_json(self.default_amount_total),
@@ -618,6 +622,31 @@ def parse_definition(
         )
         return None
 
+    category = normalize_token(row.get("benefit_category"))
+    if not category:
+        add_warning(
+            plan,
+            WarningItem(
+                "missing_benefit_category",
+                "Benefit category is required.",
+                row=row_number,
+                column="benefit_category",
+            ),
+        )
+        return None
+    if category not in BENEFIT_CATEGORIES:
+        add_warning(
+            plan,
+            WarningItem(
+                "unsupported_benefit_category",
+                "Benefit category is unsupported.",
+                row=row_number,
+                column="benefit_category",
+                value=row.get("benefit_category"),
+            ),
+        )
+        return None
+
     amount_total = parse_decimal(row.get("benefit_default_amount_total"))
     if amount_total is None or amount_total < 0:
         add_warning(
@@ -713,6 +742,7 @@ def parse_definition(
         card_slug=card.slug,
         name=name,
         normalized_name=normalized_name,
+        category=category,
         cycle_type=cycle_type,
         unit=unit,
         default_amount_total=amount_total,
@@ -796,6 +826,7 @@ def definition_matches(existing: BenefitDefinition, planned: DefinitionPlan) -> 
     return all(
         (
             existing.name == planned.name,
+            existing.category == planned.category,
             existing.cycle_type == planned.cycle_type,
             existing.unit == planned.unit,
             decimal_equal(existing.default_amount_total, planned.default_amount_total),

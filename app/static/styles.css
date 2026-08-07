@@ -807,6 +807,26 @@ dialog.panel::backdrop {
   }
 }
 
+/* Category group headers in the ACTIVE (Current) dashboard section */
+.category-group-header td {
+  padding-block: 0.6rem 0.4rem;
+  padding-inline: 1rem;
+  background: var(--dim-bg-03);
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+}
+
+.category-group-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 @keyframes linked-highlight {
   0% {
     background: rgba(59, 130, 246, 0.15);

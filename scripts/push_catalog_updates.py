@@ -134,7 +134,7 @@ def push_updates(session: Session, force: bool = False) -> None:
             if existing_benefit:
                 # Update existing benefit
                 benefit_needs_commit = False
-                benefit_fields = ["name", "cycle_type", "unit", "default_amount_total", "amount_overrides", "notes"]
+                benefit_fields = ["name", "category", "cycle_type", "unit", "default_amount_total", "amount_overrides", "notes"]
                 
                 for field in benefit_fields:
                     current_val = getattr(existing_benefit, field)
@@ -157,6 +157,7 @@ def push_updates(session: Session, force: bool = False) -> None:
                     card_id=card.card_id,
                     name=tb.name,
                     normalized_name=tb.normalized_name,
+                    category=tb.category,
                     cycle_type=tb.cycle_type,
                     unit=tb.unit,
                     default_amount_total=tb.default_amount_total,

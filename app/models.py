@@ -38,6 +38,7 @@ CYCLE_TYPES = (
     "multi_year",
 )
 UNITS = ("usd_credit", "miles", "cert", "spend_to_goal_usd", "event")
+BENEFIT_CATEGORIES = ("dining", "travel", "others")
 PERIOD_STATUSES = ("pending", "completed", "skipped", "expired")
 USAGE_EVENT_TYPES = ("import_initial", "usage", "adjustment", "quick_complete")
 
@@ -143,6 +144,10 @@ class BenefitSourceConfig(TimestampMixin, Base):
             "default_amount_total >= 0",
             name="default_amount_total_nonnegative",
         ),
+        CheckConstraint(
+            f"category is null or category in ({_sql_values(BENEFIT_CATEGORIES)})",
+            name="category",
+        ),
         Index("ix_benefit_source_config_source_id", "source_id"),
         MYSQL_TABLE_OPTIONS,
     )
@@ -159,6 +164,7 @@ class BenefitSourceConfig(TimestampMixin, Base):
     unit: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
     default_amount_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     amount_overrides: Mapped[Optional[dict[str, float]]] = mapped_column(JSON, nullable=True)
+    category: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     card_source_config: Mapped["CardSourceConfig"] = relationship(
@@ -234,6 +240,10 @@ class BenefitDefinition(TimestampMixin, Base):
             "default_amount_total >= 0",
             name="default_amount_total_nonnegative",
         ),
+        CheckConstraint(
+            f"category is null or category in ({_sql_values(BENEFIT_CATEGORIES)})",
+            name="category",
+        ),
         Index("ix_benefit_definitions_card_id", "card_id"),
         MYSQL_TABLE_OPTIONS,
     )
@@ -252,6 +262,7 @@ class BenefitDefinition(TimestampMixin, Base):
     amount_overrides: Mapped[Optional[dict[str, float]]] = mapped_column(JSON, nullable=True)
     default_deadline_rule: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     default_period_rule: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    category: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     active: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default=text("1"), nullable=False
     )

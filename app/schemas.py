@@ -23,6 +23,7 @@ CycleType = Literal[
 PeriodStatus = Literal["pending", "completed", "skipped", "expired"]
 ManualUsageEventType = Literal["usage", "adjustment", "quick_complete"]
 UsageEventType = Literal["import_initial", "usage", "adjustment", "quick_complete"]
+BenefitCategory = Literal["dining", "travel", "others"]
 
 
 def decimal_to_api(value: Decimal | int | float | str | None) -> float | None:
@@ -67,6 +68,7 @@ class BenefitDefinitionSummary(BaseModel):
     unit: str | None
     default_amount_total: float
     amount_overrides: dict[str, float] | None = None
+    category: BenefitCategory | None = None
     active: bool
 
 
@@ -141,6 +143,7 @@ class DashboardRow(BaseModel):
     benefit_name: str
     cycle_type: CycleType
     unit: str | None
+    category: BenefitCategory | None = None
     period_key: str
     period_start: date
     period_end: date
@@ -157,10 +160,16 @@ class DashboardRow(BaseModel):
     is_completed: bool
 
 
+class DashboardCategoryGroup(BaseModel):
+    category: BenefitCategory | None  # None = uncategorised
+    rows: list[DashboardRow]
+
+
 class DashboardSection(BaseModel):
     key: str
     title: str
     rows: list[DashboardRow]
+    category_groups: list[DashboardCategoryGroup] | None = None
 
 
 class DashboardResponse(BaseModel):
@@ -284,6 +293,7 @@ class BenefitSourceConfigRead(BaseModel):
     unit: str | None
     default_amount_total: float
     amount_overrides: dict[str, float] | None = None
+    category: BenefitCategory | None = None
 
 
 class CardSourceConfigRead(BaseModel):

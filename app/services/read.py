@@ -94,6 +94,7 @@ def definition_to_summary(definition: BenefitDefinition) -> BenefitDefinitionSum
         unit=definition.unit,
         default_amount_total=decimal_to_api(definition.default_amount_total) or 0.0,
         amount_overrides=definition.amount_overrides,
+        category=definition.category,
         active=definition.active,
     )
 
@@ -285,6 +286,7 @@ def list_dashboard_rows(
                 benefit_name=definition.name,
                 cycle_type=definition.cycle_type,
                 unit=definition.unit,
+                category=definition.category,
                 period_key=period.period_key,
                 period_start=period.period_start,
                 period_end=period.period_end,

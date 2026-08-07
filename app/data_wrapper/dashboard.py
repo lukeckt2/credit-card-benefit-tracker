@@ -7,24 +7,34 @@ from typing import Callable
 
 from sqlalchemy.orm import Session
 
-from app.schemas import CycleType, DashboardResponse, DashboardRow, DashboardSection, PeriodStatus
+from app.schemas import (
+    CycleType,
+    DashboardCategoryGroup,
+    DashboardResponse,
+    DashboardRow,
+    DashboardSection,
+    PeriodStatus,
+)
 from app.services import read as read_service
 
 
 SectionPredicate = Callable[[DashboardRow], bool]
 SectionSortKey = Callable[[DashboardRow], tuple]
 
+CATEGORY_ORDER = ("dining", "travel", "others")
+
 
 def _by_deadline(row: DashboardRow) -> tuple:
     return (row.deadline, row.card_name, row.benefit_name)
 
 
-SECTION_DEFINITIONS: tuple[tuple[str, str, SectionPredicate, SectionSortKey], ...] = (
+SECTION_DEFINITIONS: tuple[tuple[str, str, SectionPredicate, SectionSortKey, bool], ...] = (
     (
         "active_current",
         "ACTIVE (Current)",
         lambda row: row.status == "pending" and row.amount_remaining > 0,
         _by_deadline,
+        True,   # use_category_groups
     ),
     (
         "due_within_45_days",
@@ -33,6 +43,7 @@ SECTION_DEFINITIONS: tuple[tuple[str, str, SectionPredicate, SectionSortKey], ..
         and row.amount_remaining > 0
         and 0 <= row.days_until_deadline <= 45,
         _by_deadline,
+        False,
     ),
 )
 
@@ -66,12 +77,28 @@ def build_dashboard(
         current_only=True,
     )
 
-    sections = [
-        DashboardSection(
-            key=key,
-            title=title,
-            rows=sorted((row for row in rows if predicate(row)), key=sort_key),
+    sections = []
+    for key, title, predicate, sort_key, use_category_groups in SECTION_DEFINITIONS:
+        section_rows = sorted((row for row in rows if predicate(row)), key=sort_key)
+        category_groups = None
+        if use_category_groups:
+            grouped: dict[str | None, list[DashboardRow]] = {}
+            for row in section_rows:
+                grouped.setdefault(row.category, []).append(row)
+            # Order: dining -> travel -> others -> None (uncategorised)
+            ordered_keys = [k for k in CATEGORY_ORDER if k in grouped]
+            if None in grouped:
+                ordered_keys.append(None)
+            category_groups = [
+                DashboardCategoryGroup(category=k, rows=grouped[k])
+                for k in ordered_keys
+            ]
+        sections.append(
+            DashboardSection(
+                key=key,
+                title=title,
+                rows=section_rows,
+                category_groups=category_groups,
+            )
         )
-        for key, title, predicate, sort_key in SECTION_DEFINITIONS
-    ]
     return DashboardResponse(as_of=as_of, sections=sections)

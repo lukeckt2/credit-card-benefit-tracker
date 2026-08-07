@@ -113,9 +113,11 @@ def seed(session: Session) -> None:
             cycle_type = (row.get("benefit_cycle_type") or "").strip().lower().replace("-", "_")
             unit = (row.get("benefit_unit") or "").strip().lower().replace("-", "_") or None
             amount = parse_decimal(row.get("benefit_default_amount_total")) or Decimal("0")
+            category_raw = (row.get("benefit_category") or "").strip().lower().replace("-", "_") or None
 
             benefit_values = dict(
                 name=benefit_name,
+                category=category_raw,
                 cycle_type=cycle_type,
                 unit=unit,
                 default_amount_total=amount,
